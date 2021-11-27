@@ -25,6 +25,7 @@ import (
 
 	clustercmd "github.com/hazelcast/hazelcast-commandline-client/commands/cluster"
 	mapcmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/map"
+	pnccmd "github.com/hazelcast/hazelcast-commandline-client/commands/types/pnc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 )
 
@@ -65,4 +66,5 @@ func init() {
 	decorateRootCommand(rootCmd)
 	rootCmd.AddCommand(clustercmd.ClusterCmd)
 	rootCmd.AddCommand(mapcmd.MapCmd)
+	rootCmd.AddCommand(pnccmd.PNCCmd)
 }

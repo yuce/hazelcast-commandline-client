@@ -11,3 +11,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace (
+	github.com/c-bata/go-prompt v0.2.5 => github.com/yuce/go-prompt v0.2.7-0.20220122092443-6bb274e42657
+)

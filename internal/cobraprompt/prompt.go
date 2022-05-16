@@ -123,7 +123,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
-	ctx = internal.SetContext(ctx, co.Persister)
+	ctx = internal.ContextWithPersister(ctx, co.Persister)
 	p := goprompt.New(
 		func(in string) {
 			ctx, cancel := context.WithCancel(ctx)

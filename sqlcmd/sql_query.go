@@ -29,7 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/spf13/cobra"
 
-	hzcerror "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/table"
 )
@@ -54,7 +54,7 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 			ctx := cmd.Context()
 			c, err := internal.ConnectToCluster(ctx, config)
 			if err != nil {
-				return hzcerror.NewLoggableError(err, "Cannot get initialize client")
+				return hzcerrors.NewLoggableError(err, "Cannot get initialize client")
 			}
 			for _, q := range queries {
 				lt := strings.ToLower(q)
@@ -64,11 +64,11 @@ func NewQuery(config *hazelcast.Config) *cobra.Command {
 							// pager may be closed, expected error
 							return nil
 						}
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
+						return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 					}
 				} else {
 					if err := execute(ctx, c, q); err != nil {
-						return hzcerror.NewLoggableError(err, "Cannot execute the query")
+						return hzcerrors.NewLoggableError(err, "Cannot execute the query")
 					}
 				}
 			}

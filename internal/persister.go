@@ -13,35 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package errors
+package internal
 
-import "fmt"
+import "context"
 
-type LoggableError struct {
-	msg string
-	err error
+func PersistedNamesFromContext(ctx context.Context) map[string]string {
+	return ctx.Value("persister").(map[string]string)
 }
 
-type FlagError error
-
-func NewLoggableError(err error, format string, a ...interface{}) LoggableError {
-	return LoggableError{
-		msg: fmt.Sprintf(format, a...),
-		err: err,
-	}
-}
-
-func (e LoggableError) Error() string {
-	return e.msg
-}
-
-func (e LoggableError) VerboseError() string {
-	if e.err == nil {
-		return fmt.Sprintln(e.msg)
-	}
-	return fmt.Sprintf("%s\nDetails: %s", e.msg, e.err)
-}
-
-func (e LoggableError) Unwrap() error {
-	return e.err
+func ContextWithPersistedNames(ctx context.Context, persister map[string]string) context.Context {
+	return context.WithValue(ctx, "persister", persister)
 }

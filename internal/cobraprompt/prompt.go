@@ -16,6 +16,7 @@
 package cobraprompt
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -101,7 +102,7 @@ var SuggestionColorOptions = []goprompt.Option{
 
 // Run will automatically generate suggestions for all cobra commands and flags defined by RootCmd and execute the selected commands.
 // Run will also reset all given flags by default, see PersistFlagValues
-func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config) {
+func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelcast.Config, cmdHistoryPath string) {
 	defer handleExit()
 	// let ctrl+c exit goprompt
 	co.GoPromptOptions = append(co.GoPromptOptions, goprompt.OptionAddKeyBind(goprompt.KeyBind{
@@ -123,6 +124,23 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 	}))
 	co.GoPromptOptions = append(co.GoPromptOptions, SuggestionColorOptions...)
+	history := goprompt.NewHistory()
+	f, err := os.OpenFile(cmdHistoryPath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	defer func() {
+		f.Close()
+	}()
+	if err != nil {
+		root.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
+	} else {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			history.Add(scanner.Text())
+		}
+		if scanner.Err() != nil {
+			root.Printf("Cannot load command history, will proceed without one\nhistory file on %s:%s...\n", cmdHistoryPath, err)
+			history.Clear()
+		}
+	}
 	ctx = internal.ContextWithPersistedNames(ctx, co.Persister)
 	var p *goprompt.Prompt
 	p = goprompt.New(
@@ -155,7 +173,11 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 			root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 				return hzcerrors.FlagError(err)
 			})
-			if err := root.ExecuteContext(ctx); err != nil {
+			err = root.ExecuteContext(ctx)
+			if _, writeErr := f.WriteString(fmt.Sprintln(in)); writeErr != nil {
+				root.Printf("Could not persist command to history:%s\nErr:%s\n", in, writeErr)
+			}
+			if err != nil {
 				if errors.Is(err, ErrExit) {
 					exitPromptSafely()
 					return
@@ -186,6 +208,7 @@ func (co CobraPrompt) Run(ctx context.Context, root *cobra.Command, cnfg *hazelc
 		},
 		co.GoPromptOptions...,
 	)
+	p.History = history
 	p.Run()
 }
 

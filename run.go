@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -31,6 +32,7 @@ import (
 	hzcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/cobraprompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/file"
 	goprompt "github.com/hazelcast/hazelcast-commandline-client/internal/go-prompt"
 	"github.com/hazelcast/hazelcast-commandline-client/types/mapcmd"
 )
@@ -56,6 +58,17 @@ func IsInteractiveCall(rootCmd *cobra.Command, args []string) bool {
 
 func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *hazelcast.Config) {
 	namePersister := make(map[string]string)
+	cmdHistoryPath := filepath.Join(file.HZCHomePath(), ".hzc_history")
+	exists, err := file.FileExists(cmdHistoryPath)
+	if err != nil {
+		rootCmd.Printf("Error: Can not read command history file on %s, may be missing permissions:\n%s\n", cmdHistoryPath, err)
+		return
+	}
+	if !exists {
+		if err := file.CreateMissingDirsAndFileWithRWPerms(cmdHistoryPath, []byte{}); err != nil {
+			rootCmd.Printf("Error: Can not create command history file on %s, may be missing permissions:\n%s\n", cmdHistoryPath, err)
+		}
+	}
 	var p = &cobraprompt.CobraPrompt{
 		ShowHelpCommandAndFlags:  true,
 		ShowHiddenFlags:          true,
@@ -96,7 +109,8 @@ func RunCmdInteractively(ctx context.Context, rootCmd *cobra.Command, cnfg *haze
 	p.FlagsToExclude = flagsToExclude
 	rootCmd.Example = fmt.Sprintf("> %s\n> %s", mapcmd.MapPutExample, mapcmd.MapGetExample) + "\n> cluster version"
 	rootCmd.Use = ""
-	p.Run(ctx, rootCmd, cnfg)
+	p.Run(ctx, rootCmd, cnfg, cmdHistoryPath)
+	return
 }
 
 func updateConfigWithFlags(rootCmd *cobra.Command, cnfg *config.Config, programArgs []string, globalFlagValues *config.GlobalFlagValues) error {

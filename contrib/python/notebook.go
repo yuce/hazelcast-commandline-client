@@ -33,6 +33,11 @@ func (cm NotebookCommand) Exec(ec plug.ExecContext) error {
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	if !exists {
+		if err := ve.Create(); err != nil {
+			return err
+		}
+	}
 	err = ve.InstallRequirements(
 		"hazelcast-python-client==5.1",
 		"psutil==5.9.3",
@@ -41,11 +46,6 @@ func (cm NotebookCommand) Exec(ec plug.ExecContext) error {
 	)
 	if err != nil {
 		return err
-	}
-	if !exists {
-		if err := ve.Create(); err != nil {
-			return err
-		}
 	}
 	if err := runJupyterNotebook(ve); err != nil {
 		return err

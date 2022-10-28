@@ -32,14 +32,14 @@ func (cm Command) Exec(ec plug.ExecContext) error {
 		if err := ve.Create(); err != nil {
 			return err
 		}
-		err := ve.InstallRequirements(
-			"hazelcast-python-client==5.1",
-			"psutil==5.9.3",
-			"PyYAML==6.0",
-		)
-		if err != nil {
-			return err
-		}
+	}
+	err = ve.InstallRequirements(
+		"hazelcast-python-client==5.1",
+		"psutil==5.9.3",
+		"PyYAML==6.0",
+	)
+	if err != nil {
+		return err
 	}
 	if err := ve.Exec("python", ec.Args()...); err != nil {
 		return err

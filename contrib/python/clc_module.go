@@ -1,4 +1,4 @@
-package notebook
+package python
 
 const PythonModule = `
 import os

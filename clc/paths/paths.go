@@ -37,6 +37,10 @@ func Logs() string {
 	return filepath.Join(Home(), "logs")
 }
 
+func Venvs() string {
+	return filepath.Join(Home(), "venvs")
+}
+
 func DefaultConfigPath() string {
 	return filepath.Join(Home(), "config.yaml")
 }

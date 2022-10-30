@@ -14,6 +14,11 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
+const (
+	python3Path    = "/bin/python3"
+	python3LibPath = "lib/python3.10"
+)
+
 type VirtualEnv struct {
 	path    string
 	cfgPath string
@@ -23,7 +28,7 @@ type VirtualEnv struct {
 
 func NewVirtualEnv(ec plug.ExecContext) (VirtualEnv, error) {
 	ve := VirtualEnv{ec: ec}
-	cn := ec.Props().GetString(clc.PropertyConfigPath)
+	cn := ec.Props().GetString(clc.PropertyConfig)
 	if cn == "" {
 		return ve, fmt.Errorf("config name is required")
 	}
@@ -96,7 +101,7 @@ func (ve VirtualEnv) createRequirementsFile(reqs ...string) (string, error) {
 }
 
 func (ve VirtualEnv) writePythonModule() error {
-	path := paths.Join(ve.path, "lib", "python3.10", "site-packages", "clc.py")
+	path := paths.Join(ve.path, python3LibPath, "site-packages", "clc.py")
 	ve.ec.Logger().Debugf("Writing the Python module to: %s", path)
 	return os.WriteFile(path, []byte(PythonModule), 0600)
 }

@@ -11,10 +11,6 @@ import (
 
 type NotebookCommand struct{}
 
-const (
-	python3Path = "/bin/python3"
-)
-
 func (cm NotebookCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("notebook")
 	short := "Run a Jupyter Notebook"

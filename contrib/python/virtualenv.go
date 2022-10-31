@@ -1,6 +1,7 @@
 package python
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,25 +10,27 @@ import (
 	"syscall"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/logger"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 const (
-	python3Path    = "/bin/python3"
 	python3LibPath = "lib/python3.10"
 )
 
 type VirtualEnv struct {
 	path    string
 	cfgPath string
-	lg      logger.Logger
+	lg      log.Logger
 	ec      plug.ExecContext
 }
 
-func NewVirtualEnv(ec plug.ExecContext) (VirtualEnv, error) {
-	ve := VirtualEnv{ec: ec}
+func NewVirtualEnv(ec plug.ExecContext, lg log.Logger) (VirtualEnv, error) {
+	ve := VirtualEnv{
+		ec: ec,
+		lg: lg,
+	}
 	cn := ec.Props().GetString(clc.PropertyConfig)
 	if cn == "" {
 		return ve, fmt.Errorf("config name is required")
@@ -60,8 +63,12 @@ func (ve VirtualEnv) Exists() (bool, error) {
 
 func (ve VirtualEnv) Create() error {
 	ve.ec.Logger().Info("Creating virtual env at: %s", ve.path)
-	c := exec.Command(python3Path, "-m", "venv", ve.path)
-	err := c.Run()
+	pyPath, err := python3Path()
+	if err != nil {
+		return errors.New("Python3 not found")
+	}
+	c := exec.Command(pyPath, "-m", "venv", ve.path)
+	err = c.Run()
 	if err != nil {
 		return err
 	}
@@ -101,11 +108,39 @@ func (ve VirtualEnv) createRequirementsFile(reqs ...string) (string, error) {
 }
 
 func (ve VirtualEnv) writePythonModule() error {
-	path := paths.Join(ve.path, python3LibPath, "site-packages", "clc.py")
+	spPath, err := ve.python3SitePackages()
+	if err != nil {
+		return err
+	}
+	path := paths.Join(ve.path, spPath, "clc.py")
 	ve.ec.Logger().Debugf("Writing the Python module to: %s", path)
 	return os.WriteFile(path, []byte(PythonModule), 0600)
 }
 
 func (ve VirtualEnv) binPath(cmd string) string {
 	return paths.Join(ve.path, "bin", cmd)
+}
+
+func python3Path() (string, error) {
+	path, err := exec.LookPath("python3")
+	if err != nil {
+		path, err = exec.LookPath("python")
+	}
+	return path, err
+}
+
+func (ve VirtualEnv) python3SitePackages() (string, error) {
+	c := exec.Command(ve.binPath("python"), "-c", `import site; print(site.getsitepackages()[0])`)
+	b, err := c.Output()
+	if err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			ne := errors.New(string(ee.Stderr))
+			ve.lg.Error(ne)
+			return "", ne
+		}
+		return "", err
+	}
+	path := strings.TrimSpace(string(b))
+	return path, nil
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/groups"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -15,7 +14,7 @@ type GlobalInitializer struct{}
 
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
-	cc.AddCommandGroup(groups.DDSID, "Distributed Data Structures")
+	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
 	// output type flag
 	pns := plug.Registry.PrinterNames()
 	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
@@ -24,7 +23,7 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
-		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfigPath, "", false, "set the configuration path")
+		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfig, "", false, "set the configuration")
 		cc.AddStringFlag(clc.PropertyClusterAddress, "a", "localhost:5701", false, "set the cluster address")
 		cc.AddStringFlag(clc.PropertyClusterName, "", "dev", false, "set the cluster name")
 		cc.AddStringFlag(clc.PropertyLogPath, "", lp, false, "set the log path, use stderr to log to stderr")

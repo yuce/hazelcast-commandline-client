@@ -1,9 +1,10 @@
 package _map
 
 const (
-	mapFlagKeyType   = "key"
-	mapFlagValueType = "value"
+	mapFlagKeyType   = "key-type"
+	mapFlagValueType = "value-type"
 	mapTTL           = "ttl"
 	// TODO: move
-	ttlUnset = -1
+	ttlUnset       = -1
+	defaultMapName = "default"
 )

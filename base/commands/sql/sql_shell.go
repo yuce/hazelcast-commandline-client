@@ -23,9 +23,10 @@ func (cm *SQLShellCommand) Augment(ec plug.ExecContext, props *plug.Properties) 
 }
 
 func (cm *SQLShellCommand) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("shell")
+	//cc.SetCommandUsage("shell")
 	help := "Start the interactive SQL shell"
 	cc.SetCommandHelp(help, help)
+	cc.SetCommandUsage("shell [flags]")
 	return nil
 }
 
@@ -34,10 +35,6 @@ func (cm *SQLShellCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	endLineFn := func(line string) (string, bool) {
 		line = strings.TrimSpace(line)
@@ -46,6 +43,10 @@ func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecCont
 	}
 	textFn := func(ctx context.Context, text string) error {
 		text, err := convertStatement(text)
+		if err != nil {
+			return err
+		}
+		ci, err := ec.ClientInternal(ctx)
 		if err != nil {
 			return err
 		}
@@ -76,7 +77,7 @@ func (cm *SQLShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecCont
 func convertStatement(stmt string) (string, error) {
 	stmt = strings.TrimSpace(stmt)
 	if strings.HasPrefix(stmt, "help") {
-		return "", errors.New(help())
+		return "", errors.New(interactiveHelp())
 	}
 	if strings.HasPrefix(stmt, "\\") {
 		// this is a shell command
@@ -114,7 +115,7 @@ func convertStatement(stmt string) (string, error) {
 	return stmt, nil
 }
 
-func help() string {
+func interactiveHelp() string {
 	return `
 Commands:
 	\dm           list mappings

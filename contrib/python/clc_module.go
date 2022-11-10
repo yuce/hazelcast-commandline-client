@@ -49,7 +49,7 @@ def make_client_config(cfg):
         ssl_cafile=cfg["ssl"]["ca-path"],
         ssl_certfile=cfg["ssl"]["cert-path"],
         ssl_keyfile=cfg["ssl"]["key-path"],
-        ssl_password="12ee6ff601a",
+        ssl_password=cfg["ssl"]["key-password"]
     )
 
 

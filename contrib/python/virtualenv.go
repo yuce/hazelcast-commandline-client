@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -90,7 +91,10 @@ func (ve VirtualEnv) InstallRequirements(reqs ...string) error {
 func (ve VirtualEnv) Exec(cmd string, args ...string) error {
 	cmdPath := paths.Join(ve.path, "bin", cmd)
 	env := os.Environ()
-	env = append(env, fmt.Sprintf("CLC_CONFIG=%s", ve.cfgPath))
+	env = append(env,
+		fmt.Sprintf("CLC_CONFIG=%s", ve.cfgPath),
+		fmt.Sprintf("CLC_HOME=%s", paths.Home()),
+	)
 	args = append([]string{cmdPath}, args...)
 	return syscall.Exec(cmdPath, args, env)
 }
@@ -118,7 +122,11 @@ func (ve VirtualEnv) writePythonModule() error {
 }
 
 func (ve VirtualEnv) binPath(cmd string) string {
-	return paths.Join(ve.path, "bin", cmd)
+	bp := "bin"
+	if runtime.GOOS == "windows" {
+		bp = "Scripts"
+	}
+	return paths.Join(ve.path, bp, cmd)
 }
 
 func python3Path() (string, error) {

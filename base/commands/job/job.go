@@ -13,7 +13,7 @@ type Cmd struct{}
 func (cm Cmd) Init(cc plug.InitContext) error {
 	cc.SetCommandGroup(clc.GroupJetID)
 	cc.SetTopLevel(true)
-	help := "Jet job operations"
+	help := "Jet job operations [EXPERIMENTAL]"
 	cc.SetCommandUsage("job [command]")
 	cc.SetCommandHelp(help, help)
 	return nil

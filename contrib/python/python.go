@@ -14,7 +14,7 @@ type Command struct{}
 func (cm Command) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("python [flags] [file.py]")
 	long := "Run Python with the CLC module enabled"
-	short := "Run Python"
+	short := "Run Python [EXPERIMENTAL]"
 	cc.SetCommandHelp(long, short)
 	cc.SetCommandGroup("python")
 	return nil

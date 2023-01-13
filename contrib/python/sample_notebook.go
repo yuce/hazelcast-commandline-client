@@ -2,6 +2,15 @@ package python
 
 const sampleNotebookName = "MyNotebook"
 
+const defaultNotebook = `
+{
+ "cells": [],
+ "metadata": {},
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
+`
+
 const sampleNotebook = `
 {
  "cells": [
@@ -110,18 +119,9 @@ const sampleNotebook = `
    "metadata": {},
    "outputs": [],
    "source": [
-    "# create a data frame from SQL\n",
+    "# create a dataframe from SQL\n",
     "import pandas\n",
-    "df = pandas.read_sql(\"select * from city\", conn)"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "78a0fa48",
-   "metadata": {},
-   "outputs": [],
-   "source": [
+    "df = pandas.read_sql(\"select * from city\", conn)\n",
     "df"
    ]
   },
@@ -133,7 +133,7 @@ const sampleNotebook = `
    "outputs": [],
    "source": [
     "# create a plot from the dataframe\n",
-    "df.plot()\n"
+    "df.plot(x=\"name\", y=\"__key\", figsize=(10, 5))\n"
    ]
   }
  ],

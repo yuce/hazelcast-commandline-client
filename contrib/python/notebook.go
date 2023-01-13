@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
@@ -15,11 +16,12 @@ type NotebookCommand struct{}
 
 func (cm NotebookCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("notebook")
-	short := "Run a Jupyter Notebook"
 	long := "Run a Jupyter Notebook with CLC module enabled"
+	short := "Run a Jupyter Notebook [EXPERIMENTAL]"
 	cc.SetCommandHelp(long, short)
 	cc.SetCommandGroup("python")
 	cc.SetPositionalArgCount(0, 0)
+	cc.AddStringFlag("name", "n", "", false, "set the notebook name")
 	return nil
 }
 
@@ -57,33 +59,42 @@ func (cm NotebookCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	defer cancel()
 	ve := vev.(VirtualEnv)
-	if err := runJupyterNotebook(ve); err != nil {
+	if err := runJupyterNotebook(ec.Props().GetString(flagName), ve); err != nil {
 		return err
 	}
 	return nil
 }
 
-func runJupyterNotebook(ve VirtualEnv) error {
+func runJupyterNotebook(name string, ve VirtualEnv) error {
+	hasContent := false
+	if name == "" {
+		name = sampleNotebookName
+		hasContent = true
+	}
+	name = strings.TrimSuffix(name, ".pynb")
 	// cd to the notebooks dir first
 	dir := paths.Join(paths.Home(), "notebooks")
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	// ignore the error
-	path := paths.Join(dir, fmt.Sprintf("%s.ipynb", sampleNotebookName))
-	if err := createDefaultNotebook(path); err != nil {
-		panic(err)
-	}
+	path := paths.Join(dir, fmt.Sprintf("%s.ipynb", name))
+	// ignore the error
+	_ = createDefaultNotebook(path, hasContent)
 	// ignore the error
 	_ = os.Chdir(dir)
 	return ve.Exec("jupyter", "notebook", "--notebook-dir", dir)
 }
 
-func createDefaultNotebook(path string) error {
-	if !paths.Exists(path) {
-		return os.WriteFile(path, []byte(sampleNotebook), 0660)
+func createDefaultNotebook(path string, hasContent bool) error {
+	if paths.Exists(path) {
+		return nil
 	}
-	return nil
+	text := defaultNotebook
+	if hasContent {
+		text = sampleNotebook
+	}
+	return os.WriteFile(path, []byte(text), 0660)
 }
 
 func init() {

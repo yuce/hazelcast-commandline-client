@@ -43,7 +43,7 @@ const sampleNotebook = `
    "metadata": {},
    "outputs": [],
    "source": [
-    "# get a connection to the Hazelcast cluster\n",
+    "# get a SQL connection to the Hazelcast cluster\n",
     "from clc import conn"
    ]
   },
@@ -133,7 +133,7 @@ const sampleNotebook = `
    "outputs": [],
    "source": [
     "# create a plot from the dataframe\n",
-    "df.plot(x=\"name\", y=\"__key\", figsize=(10, 5))\n"
+    "df.plot(x=\"name\", y=\"__key\", kind=\"bar\")\n"
    ]
   }
  ],

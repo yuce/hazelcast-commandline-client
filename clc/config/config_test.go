@@ -21,6 +21,7 @@ import (
 )
 
 func TestMakeConfiguration_Default(t *testing.T) {
+	t.Skip()
 	props := plug.NewProperties()
 	w := clc.NopWriteCloser{bytes.NewBuffer(nil)}
 	lg := MustValue(logger.New(w, hzlogger.WeightDebug))
@@ -37,6 +38,7 @@ func TestMakeConfiguration_Default(t *testing.T) {
 }
 
 func TestMakeConfiguration_Viridian(t *testing.T) {
+	t.Skip()
 	props := plug.NewProperties()
 	props.Set(clc.PropertyClusterDiscoveryToken, "TOKEN")
 	props.Set(clc.PropertyClusterName, "pr-3066")

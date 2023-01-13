@@ -31,7 +31,7 @@ const sampleNotebook = `
     "* [Real-Time Stream Processing](https://hazelcast.com/use-cases/real-time-stream-processing/)\n",
     "* [Fast Batch Processing](https://hazelcast.com/use-cases/fast-batch-processing/)\n",
     "\n",
-    "Check out our [Python documentation](https://hazelcast.readthedocs.io/en/stable/).\n",
+    "Check out our [SQL documentation](https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview).\n",
     "\n",
     "Here are a few cells to get you started."
    ]

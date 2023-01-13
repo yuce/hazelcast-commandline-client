@@ -14,7 +14,7 @@ RELEASE_FILE ?= release.txt
 TARGZ ?= true
 
 build:
-	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
+	CGO_ENABLED=0 go build -tags base,contrib,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
 
 test:
 	go test -tags base,hazelcastinternal,hazelcastinternaltest $(TEST_FLAGS) ./...

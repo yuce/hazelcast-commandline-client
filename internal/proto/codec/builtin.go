@@ -71,6 +71,22 @@ func DecodeBoolean(buffer []byte, offset int32) bool {
 	return buffer[offset] == 1
 }
 
+func DecodeByte(buffer []byte, offset int32) byte {
+	return buffer[offset]
+}
+
+func DecodeUUID(buffer []byte, offset int32) types.UUID {
+	isNull := DecodeBoolean(buffer, offset)
+	if isNull {
+		return types.UUID{}
+	}
+	mostSignificantOffset := offset + proto.BooleanSizeInBytes
+	leastSignificantOffset := mostSignificantOffset + proto.LongSizeInBytes
+	mostSignificant := uint64(DecodeLong(buffer, mostSignificantOffset))
+	leastSignificant := uint64(DecodeLong(buffer, leastSignificantOffset))
+	return types.NewUUIDWith(mostSignificant, leastSignificant)
+}
+
 func EncodeMapForStringAndString(message *proto.ClientMessage, values map[string]string) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for key, value := range values {

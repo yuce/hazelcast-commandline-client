@@ -22,6 +22,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
 )
 
 // see also the environment variables in it/util.go
@@ -212,7 +214,7 @@ func defaultSkipChecker() Checker {
 	_, enterprise := os.LookupEnv(enterpriseKey)
 	return Checker{
 		HzVer:      hzVersion(),
-		Ver:        pkg.Version,
+		Ver:        prv.Version,
 		OS:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 		Enterprise: enterprise,
@@ -231,7 +233,7 @@ func defaultSkipChecker() Checker {
 // right is the given Hazelcast server version.
 // Hazelcast server version is retrieved from HZ_VERSION environment variable.
 func (s Checker) checkHzVer(op, right string) bool {
-	return pkg.CheckVersion(s.HzVer, op, right)
+	return prv.CheckVersion(s.HzVer, op, right)
 }
 
 // checkVer evaluates left OP right and returns the result.
@@ -239,7 +241,7 @@ func (s Checker) checkHzVer(op, right string) bool {
 // op is the comparison operator.
 // right is the given client version.
 func (s Checker) checkVer(op, right string) bool {
-	return pkg.CheckVersion(s.Ver, op, right)
+	return prv.CheckVersion(s.Ver, op, right)
 }
 
 // checkOS evaluates left OP right and returns the result.

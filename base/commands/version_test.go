@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
 	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 
 	"github.com/hazelcast/hazelcast-commandline-client/base"
@@ -17,7 +18,7 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	pkg.Version = "v5.2.0"
+	prv.Version = "v5.2.0"
 	cmd := &commands.VersionCommand{}
 	cc := &it.CommandContext{}
 	require.NoError(t, cmd.Init(cc))

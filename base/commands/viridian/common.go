@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/viridian"
 )
 
 const (

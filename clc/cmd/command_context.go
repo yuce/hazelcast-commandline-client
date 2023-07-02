@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/mk"
 )
 
 type CommandContext struct {

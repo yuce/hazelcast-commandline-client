@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 )
 
 func downloadLogs_NonInteractiveTest(t *testing.T) {

@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
+
+	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 )
 
 func TestTopic(t *testing.T) {

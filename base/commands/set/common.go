@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-go-client"
+
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
 )
 
 func addValueTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	help := fmt.Sprintf("value type (one of: %s)", strings.Join(prv.SupportedTypeNames, ", "))
 	cc.AddStringFlag(setFlagValueType, "v", "string", false, help)
 }
 

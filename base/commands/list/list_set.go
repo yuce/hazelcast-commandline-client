@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/proto/codec"
+	. "github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/proto/codec"
 )
 
 type ListSetCommand struct{}

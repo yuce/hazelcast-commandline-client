@@ -18,11 +18,11 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
+	. "github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/log"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/output"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/terminal"
 )
 
 const (

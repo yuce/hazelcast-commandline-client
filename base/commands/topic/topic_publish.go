@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/topic"
 	"github.com/hazelcast/hazelcast-go-client"
 
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/topic"
+
+	. "github.com/hazelcast/hazelcast-commandline-client/prv/check"
 )
 
 type topicPublishCommand struct{}

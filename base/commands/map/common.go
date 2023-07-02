@@ -6,18 +6,18 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
 )
 
 func addKeyTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("key type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	help := fmt.Sprintf("key type (one of: %s)", strings.Join(prv.SupportedTypeNames, ", "))
 	cc.AddStringFlag(mapFlagKeyType, "k", "string", false, help)
 }
 
 func addValueTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	help := fmt.Sprintf("value type (one of: %s)", strings.Join(prv.SupportedTypeNames, ", "))
 	cc.AddStringFlag(mapFlagValueType, "v", "string", false, help)
 }
 

@@ -9,17 +9,18 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/mk"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/output"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/serialization"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/topic"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/mk"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/topic"
 )
 
 func addValueTypeFlag(cc plug.InitContext) {
-	help := fmt.Sprintf("value type (one of: %s)", strings.Join(internal.SupportedTypeNames, ", "))
+	help := fmt.Sprintf("value type (one of: %s)", strings.Join(prv.SupportedTypeNames, ", "))
 	cc.AddStringFlag(topicFlagValueType, "v", "string", false, help)
 }
 

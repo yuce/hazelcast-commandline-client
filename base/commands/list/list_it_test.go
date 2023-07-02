@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 )
 
 func TestList(t *testing.T) {

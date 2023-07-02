@@ -10,9 +10,9 @@ import (
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/viridian"
 )
 
 func TestViridian(t *testing.T) {

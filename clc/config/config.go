@@ -15,10 +15,10 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/log"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/str"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/viridian"
 )
 
 const (

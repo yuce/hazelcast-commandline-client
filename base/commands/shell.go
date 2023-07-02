@@ -12,16 +12,17 @@ import (
 
 	"github.com/google/shlex"
 
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/terminal"
+
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/shell"
 	puberrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/terminal"
 )
 
 const banner = `Hazelcast CLC %s (c) 2023 Hazelcast Inc.
@@ -80,7 +81,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 			logLevel := strings.ToUpper(ec.Props().GetString(clc.PropertyLogLevel))
 			logText = fmt.Sprintf("Log %9s : %s", logLevel, logPath)
 		}
-		I2(fmt.Fprintf(ec.Stdout(), banner, internal.Version, cfgText, logText))
+		check.I2(fmt.Fprintf(ec.Stdout(), banner, prv.Version, cfgText, logText))
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	clcMultilineContinue := false
@@ -124,7 +125,7 @@ func (cm *ShellCommand) ExecInteractive(ctx context.Context, ec plug.ExecContext
 		text, err := convertStatement(text)
 		if err != nil {
 			if errors.Is(err, errHelp) {
-				I2(fmt.Fprintln(stdout, interactiveHelp()))
+				check.I2(fmt.Fprintln(stdout, interactiveHelp()))
 				return nil
 			}
 			return err
@@ -224,5 +225,5 @@ Shortcut Commands:
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))
+	check.Must(plug.Registry.RegisterCommand("shell", &ShellCommand{}))
 }

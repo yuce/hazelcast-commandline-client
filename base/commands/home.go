@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	. "github.com/hazelcast/hazelcast-commandline-client/prv/check"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
 )
 
 type HomeCommand struct{}

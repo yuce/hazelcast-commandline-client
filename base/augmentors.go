@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
 )
 
 type CheckOutputTypeAugmentor struct{}

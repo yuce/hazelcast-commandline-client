@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 )
 
 const jobPath = "testdata/sample-job-1-1.0-SNAPSHOT-all.jar"

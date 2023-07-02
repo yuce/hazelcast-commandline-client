@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands/object"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it/skip"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it/skip"
 )
 
 func TestShell(t *testing.T) {

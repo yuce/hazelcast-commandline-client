@@ -9,15 +9,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
+
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
 )
 
 func TestVersion(t *testing.T) {
-	internal.Version = "v5.2.0"
+	pkg.Version = "v5.2.0"
 	cmd := &commands.VersionCommand{}
 	cc := &it.CommandContext{}
 	require.NoError(t, cmd.Init(cc))

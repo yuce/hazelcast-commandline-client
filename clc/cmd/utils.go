@@ -14,7 +14,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	"github.com/hazelcast/hazelcast-commandline-client/internal"
+	"github.com/hazelcast/hazelcast-commandline-client/prv"
 )
 
 func ExtractStartupArgs(args []string) (cfgPath, logFile, logLevel string, err error) {
@@ -55,7 +55,7 @@ func CheckServerCompatible(ci *hazelcast.ClientInternal, targetVersion string) (
 	if os.Getenv(clc.EnvSkipServerVersionCheck) == "1" {
 		return sv, true
 	}
-	ok := internal.CheckVersion(sv, ">=", targetVersion)
+	ok := prv.CheckVersion(sv, ">=", targetVersion)
 	return sv, ok
 }
 

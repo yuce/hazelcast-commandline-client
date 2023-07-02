@@ -17,7 +17,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	. "github.com/hazelcast/hazelcast-commandline-client/prv/check"
 )
 
 const (

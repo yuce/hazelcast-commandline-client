@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-commandline-client/internal/it"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/it"
 )
 
 func streamLogs_nonInteractiveTest(t *testing.T) {

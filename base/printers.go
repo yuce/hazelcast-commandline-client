@@ -9,8 +9,8 @@ import (
 	"github.com/nathan-fiscaletti/consolesize-go"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
-	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/output"
+	"github.com/hazelcast/hazelcast-commandline-client/prv/plug"
 )
 
 const (

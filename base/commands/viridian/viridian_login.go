@@ -20,8 +20,6 @@ import (
 const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
-	propEmail     = "email"
-	propPassword  = "password"
 	secretPrefix  = "viridian"
 )
 
@@ -41,6 +39,9 @@ Alternatively, you can use the following environment variables:
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propAPISecret, "", "", false, "Viridian API Secret")
 	cc.SetPositionalArgCount(0, 0)
+	if enableInternalOps {
+		cc.SetCommandGroup("viridian")
+	}
 	return nil
 }
 
@@ -120,5 +121,9 @@ func apiKeySecret(ec plug.ExecContext) (key, secret string, err error) {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:login", &LoginCmd{}))
+	if enableInternalOps {
+		Must(plug.Registry.RegisterCommand("login", &LoginCmd{}))
+	} else {
+		Must(plug.Registry.RegisterCommand("viridian:login", &LoginCmd{}))
+	}
 }

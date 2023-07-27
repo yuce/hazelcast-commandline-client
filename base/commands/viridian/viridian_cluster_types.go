@@ -6,7 +6,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -64,5 +64,7 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:list-cluster-types", &ClusterTypeListCmd{}))
+	if !enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("viridian:list-cluster-types", &ClusterTypeListCmd{}))
+	}
 }

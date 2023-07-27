@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -54,10 +54,6 @@ func (cm DownloadLogsCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
-func init() {
-	Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCmd{}))
-}
-
 func validateOutputDir(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil {
@@ -70,4 +66,10 @@ func validateOutputDir(dir string) error {
 		return nil
 	}
 	return errors.New("output-dir is not a directory")
+}
+
+func init() {
+	if !enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCmd{}))
+	}
 }

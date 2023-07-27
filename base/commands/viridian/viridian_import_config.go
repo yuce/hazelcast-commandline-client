@@ -8,7 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
@@ -65,5 +65,7 @@ func (cmd ImportConfigCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCmd{}))
+	if !enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("viridian:import-config", &ImportConfigCmd{}))
+	}
 }

@@ -16,6 +16,9 @@ TARGZ ?= true
 build:
 	CGO_ENABLED=0 go build -tags base,std,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
 
+build_vrd:
+	CGO_ENABLED=0 go build -tags base,viridian,config,home,version,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS) -ldflags "-X 'github.com/hazelcast/hazelcast-commandline-client/base/commands/viridian.EnableInternalOps=yes'"  -o build/$(BINARY_NAME) ./cmd/clc
+
 test:
 	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 

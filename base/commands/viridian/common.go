@@ -25,6 +25,8 @@ const (
 var (
 	ErrClusterFailed   = errors.New("cluster failed")
 	ErrClusterNotFound = errors.New("cluster not found")
+	EnableInternalOps  = "no"
+	enableInternalOps  = false
 )
 
 func findToken(apiKey string) (string, error) {
@@ -125,4 +127,10 @@ func fixClusterState(state string) string {
 	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
 	state = strings.Replace(state, "STOP", "PAUSE", 1)
 	return state
+}
+
+func init() {
+	if EnableInternalOps == "yes" {
+		enableInternalOps = true
+	}
 }

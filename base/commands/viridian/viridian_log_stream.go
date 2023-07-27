@@ -196,5 +196,7 @@ func loggerTemplate(format string) string {
 }
 
 func init() {
-	check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCmd{}))
+	if !enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCmd{}))
+	}
 }

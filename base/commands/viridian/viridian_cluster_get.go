@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -122,5 +122,7 @@ func regionTitleSlice(regions []viridian.Region) []string {
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCmd{}))
+	if !enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCmd{}))
+	}
 }

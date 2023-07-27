@@ -9,7 +9,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
@@ -30,6 +30,10 @@ Make sure you login before running this command.
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
+	if enableInternalOps {
+		cc.AddStringFlag(flagImage, "", viridian.ClusterTypeServerless, false, "type for the cluster")
+		cc.SetCommandGroup("viridian")
+	}
 	return nil
 }
 
@@ -120,5 +124,9 @@ func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCmd{}))
+	if enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("create-cluster", &ClusterCreateCmd{}))
+	} else {
+		check.Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCmd{}))
+	}
 }

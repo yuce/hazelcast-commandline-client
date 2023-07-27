@@ -8,7 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
-	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
 )
@@ -26,6 +26,9 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
+	if enableInternalOps {
+		cc.SetCommandGroup("viridian")
+	}
 	return nil
 }
 
@@ -64,5 +67,9 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))
+	if enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("delete-cluster", &ClusterDeleteCmd{}))
+	} else {
+		check.Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))
+	}
 }

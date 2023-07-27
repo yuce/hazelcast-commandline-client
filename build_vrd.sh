@@ -1,3 +1,3 @@
 #! /bin/bash
 
-BINARY_NAME=vrd make build_vrd
+BINARY_NAME=vrd MAIN_CMD_HELP='Viridian Developer Tool' make build_vrd

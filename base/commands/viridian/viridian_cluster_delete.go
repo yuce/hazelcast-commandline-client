@@ -27,6 +27,7 @@ Make sure you login before running this command.
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
 	if enableInternalOps {
 		cc.SetCommandGroup("viridian")
+		cc.SetPositionalArgCount(0, 0)
 	} else {
 		cc.SetPositionalArgCount(1, 1)
 	}

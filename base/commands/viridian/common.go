@@ -6,8 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -94,6 +96,28 @@ func fixClusterState(state string) string {
 	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
 	state = strings.Replace(state, "STOP", "PAUSE", 1)
 	return state
+}
+
+func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {
+	clusters, err := api.ListAvailableK8sClusters(ctx)
+	if err != nil {
+		return viridian.K8sCluster{}, err
+	}
+	if len(clusters) == 0 {
+		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
+	}
+	return clusters[0], nil
+}
+
+func clusterName() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "cluster"
+	}
+	base := path.Base(cwd)
+	date := time.Now().Format("2006-01-02-15-04-05")
+	num := rand.Intn(9999)
+	return fmt.Sprintf("%s-%s-%.4d", base, date, num)
 }
 
 type vrdConfig struct {

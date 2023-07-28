@@ -4,11 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
-	"os"
-	"path"
 	"strings"
-	"time"
 )
 
 const ClusterTypeDevMode = "DEVMODE"
@@ -25,7 +21,7 @@ type createClusterResponse Cluster
 
 func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, hzVersion string) (Cluster, error) {
 	if name == "" {
-		name = clusterName()
+		return Cluster{}, fmt.Errorf("cluster name cannot be blank")
 	}
 	cType, err := a.FindClusterType(ctx, clusterType)
 	if err != nil {
@@ -50,17 +46,6 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 		return Cluster{}, fmt.Errorf("creating cluster: %w", err)
 	}
 	return cluster, nil
-}
-
-func clusterName() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		cwd = "cluster"
-	}
-	base := path.Base(cwd)
-	date := time.Now().Format("2006-01-02-15-04-05")
-	num := rand.Intn(9999)
-	return fmt.Sprintf("%s-%s-%.4d", base, date, num)
 }
 
 func (a API) StopCluster(ctx context.Context, idOrName string) error {

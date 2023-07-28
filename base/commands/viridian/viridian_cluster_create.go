@@ -4,11 +4,11 @@ package viridian
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -18,7 +18,7 @@ import (
 
 type ClusterCreateCmd struct{}
 
-func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
+func (ClusterCreateCmd) Init(cc plug.InitContext) error {
 	long := `Creates a Viridian cluster.
 
 Make sure you login before running this command.
@@ -38,12 +38,15 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
 	name := ec.Props().GetString(flagName)
+	if name == "" {
+		name = clusterName()
+	}
 	clusterType := ec.Props().GetString(flagClusterType)
 	if clusterType == "" {
 		clusterType = viridian.ClusterTypeServerless
@@ -55,33 +58,17 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return err
 		}
 	}
-	hzVersion := ec.Props().GetString(flagHazelcastVersion)
-	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Creating the cluster")
-		k8sCluster, err := getFirstAvailableK8sCluster(ctx, api)
-		if err != nil {
-			return nil, err
-		}
-		cs, err := api.CreateCluster(ctx, name, clusterType, k8sCluster.ID, hzVersion)
-		if err != nil {
-			return nil, err
-		}
-		return cs, nil
-	})
-	if err != nil {
-		return handleErrorResponse(ec, err)
-	}
-	stop()
-	c := csi.(viridian.Cluster)
-	tryImportConfig(ctx, ec, api, c)
-	if enableInternalOps {
-		vc := vrdConfig{
-			ClusterID: c.ID,
-			ImageName: image,
-		}
-		if err := saveVRDConfig(vc); err != nil {
-			return err
-		}
+	//hzVersion := ec.Props().GetString(flagHazelcastVersion)
+	ec.PrintlnUnnecessary("")
+	var cluster viridian.Cluster
+	sp := stage.NewFixedProvider(
+		createStage(ctx, ec, api, name, image, clusterType, func(cs viridian.Cluster) {
+			cluster = cs
+		}),
+		importConfigStage(ctx, ec, api, cluster, cluster.Name),
+	)
+	if err := stage.Execute(ctx, ec, sp); err != nil {
+		return err
 	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose {
@@ -89,12 +76,12 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 			output.Column{
 				Name:  "ID",
 				Type:  serialization.TypeString,
-				Value: c.ID,
+				Value: cluster.ID,
 			},
 			output.Column{
 				Name:  "Name",
 				Type:  serialization.TypeString,
-				Value: c.Name,
+				Value: cluster.Name,
 			},
 		}
 		return ec.AddOutputRows(ctx, row)
@@ -102,16 +89,7 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	return nil
 }
 
-func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {
-	clusters, err := api.ListAvailableK8sClusters(ctx)
-	if err != nil {
-		return viridian.K8sCluster{}, err
-	}
-	if len(clusters) == 0 {
-		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
-	}
-	return clusters[0], nil
-}
+func (ClusterCreateCmd) Unwrappable() {}
 
 func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, cluster viridian.Cluster) {
 	cfgName := cluster.Name

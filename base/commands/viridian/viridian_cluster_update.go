@@ -4,9 +4,8 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -34,31 +33,24 @@ func (ClusterUpdateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		api, err := getAPI(ec)
-		sp.SetText(fmt.Sprintf("Stopping cluster: %s", vc.ClusterID))
-		if err := api.StopCluster(ctx, vc.ClusterID); err != nil {
-			return nil, err
-		}
-		if err := waitClusterState(ctx, ec, api, vc.ClusterID, stateStopped); err != nil {
-			return nil, err
-		}
-		sp.SetText(fmt.Sprintf("Resuming cluster: %s", vc.ClusterID))
-		if err := api.ResumeCluster(ctx, vc.ClusterID); err != nil {
-			return nil, err
-		}
-		if err := waitClusterState(ctx, ec, api, vc.ClusterID, stateRunning); err != nil {
-			return nil, err
-		}
-		return nil, err
-	})
+	api, err := getAPI(ec)
 	if err != nil {
 		return err
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was updated.", vc.ClusterID))
+	ec.PrintlnUnnecessary("")
+	sp := stage.NewFixedProvider(
+		stopStage(ctx, ec, api, vc.ClusterID),
+		resumeStage(ctx, ec, api, vc.ClusterID),
+	)
+	if err := stage.Execute(ctx, ec, sp); err != nil {
+		return err
+	}
+	ec.PrintlnUnnecessary("")
+	ec.PrintlnUnnecessary("OK Cluster update completed successfully.")
 	return nil
 }
+
+func (ClusterUpdateCmd) Unwrappable() {}
 
 func init() {
 	if enableInternalOps {

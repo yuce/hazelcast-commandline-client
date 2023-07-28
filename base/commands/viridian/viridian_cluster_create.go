@@ -19,20 +19,21 @@ import (
 type ClusterCreateCmd struct{}
 
 func (cm ClusterCreateCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("create-cluster [flags]")
 	long := `Creates a Viridian cluster.
 
 Make sure you login before running this command.
 `
 	short := "Creates a Viridian cluster"
+	cc.SetCommandUsage("create-cluster")
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
 	if enableInternalOps {
-		cc.AddStringFlag(flagImage, "", viridian.ClusterTypeServerless, false, "type for the cluster")
 		cc.SetCommandGroup("viridian")
+		cc.AddStringFlag(flagImage, "", "", true, "Image name in the NAME:HZ_VERSION format")
+	} else {
+		cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
 	}
 	return nil
 }
@@ -44,6 +45,16 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	name := ec.Props().GetString(flagName)
 	clusterType := ec.Props().GetString(flagClusterType)
+	if clusterType == "" {
+		clusterType = viridian.ClusterTypeServerless
+	}
+	image := ec.Props().GetString(flagImage)
+	if enableInternalOps {
+		_, _, err = splitImageName(image)
+		if err != nil {
+			return err
+		}
+	}
 	hzVersion := ec.Props().GetString(flagHazelcastVersion)
 	csi, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Creating the cluster")
@@ -63,6 +74,15 @@ func (cm ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	stop()
 	c := csi.(viridian.Cluster)
 	tryImportConfig(ctx, ec, api, c)
+	if enableInternalOps {
+		vc := vrdConfig{
+			ClusterID: c.ID,
+			ImageName: image,
+		}
+		if err := saveVRDConfig(vc); err != nil {
+			return err
+		}
+	}
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
 	if verbose {
 		row := output.Row{

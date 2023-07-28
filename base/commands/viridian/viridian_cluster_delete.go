@@ -23,11 +23,12 @@ Make sure you login before running this command.
 `
 	short := "Deletes the given Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
 	if enableInternalOps {
 		cc.SetCommandGroup("viridian")
+	} else {
+		cc.SetPositionalArgCount(1, 1)
 	}
 	return nil
 }
@@ -49,7 +50,16 @@ func (cm ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 			return errors.ErrUserCancelled
 		}
 	}
-	clusterNameOrID := ec.Args()[0]
+	var clusterNameOrID string
+	if enableInternalOps {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.Args()[0]
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting the cluster")
 		err := api.DeleteCluster(ctx, clusterNameOrID)

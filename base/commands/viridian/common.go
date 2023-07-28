@@ -7,16 +7,22 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
+	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 const (
-	stateRunning = "RUNNING"
-	stateFailed  = "FAILED"
+	stateRunning      = "RUNNING"
+	stateFailed       = "FAILED"
+	stateStopped      = "STOPPED"
+	vrdConfigFilename = "vrd_config.yaml"
 )
 
 var (
@@ -88,6 +94,55 @@ func fixClusterState(state string) string {
 	state = strings.Replace(state, "STOPPED", "PAUSED", 1)
 	state = strings.Replace(state, "STOP", "PAUSE", 1)
 	return state
+}
+
+type vrdConfig struct {
+	ClusterID string
+	ImageName string
+}
+
+func vrdConfigPath() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return paths.Join(dir, vrdConfigFilename), nil
+}
+
+func saveVRDConfig(cfg vrdConfig) error {
+	path, err := vrdConfigPath()
+	if err != nil {
+		return err
+	}
+	b, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, b, 0600)
+}
+
+func loadVRDConfig() (vrdConfig, error) {
+	var vc vrdConfig
+	path, err := vrdConfigPath()
+	if err != nil {
+		return vc, err
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return vc, err
+	}
+	if err := yaml.Unmarshal(b, &vc); err != nil {
+		return vc, err
+	}
+	return vc, nil
+}
+
+func splitImageName(image string) (name, hzVersion string, err error) {
+	ps := strings.SplitN(image, ":", 2)
+	if len(ps) != 2 {
+		return "", "", fmt.Errorf("invalid image name: %s", image)
+	}
+	return ps[0], ps[1], nil
 }
 
 func init() {

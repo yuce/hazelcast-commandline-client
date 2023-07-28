@@ -78,7 +78,9 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	if !enableInternalOps {
+	if enableInternalOps {
+		check.Must(plug.Registry.RegisterCommand("list-clusters", &ClusterListCmd{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:list-clusters", &ClusterListCmd{}))
 	}
 }

@@ -4,10 +4,8 @@ package viridian
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
@@ -39,38 +37,43 @@ Make sure you login before running this command.
 }
 
 func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+	ec.PrintlnUnnecessary("")
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
-	}
-	name := ec.Props().GetString(flagName)
-	if name == "" {
-		name = clusterName()
 	}
 	clusterType := ec.Props().GetString(flagClusterType)
 	if clusterType == "" {
 		clusterType = viridian.ClusterTypeServerless
 	}
 	image := ec.Props().GetString(flagImage)
+	var imageTag string
 	if enableInternalOps {
-		_, _, err = splitImageName(image)
+		// validating the image name
+		imageTag, _, err = splitImageName(image)
 		if err != nil {
 			return err
 		}
 	}
-	//hzVersion := ec.Props().GetString(flagHazelcastVersion)
-	ec.PrintlnUnnecessary("")
-	var cluster viridian.Cluster
+	name := ec.Props().GetString(flagName)
+	if name == "" {
+		if imageTag != "" {
+			name = imageTag
+		} else {
+			name = makeClusterName()
+		}
+	}
+	stageState := map[string]any{}
 	sp := stage.NewFixedProvider(
-		createStage(ctx, ec, api, name, image, clusterType, func(cs viridian.Cluster) {
-			cluster = cs
-		}),
-		importConfigStage(ctx, ec, api, cluster, cluster.Name),
+		createStage(ctx, ec, api, name, clusterType, image, stageState),
+		importConfigStage(ctx, ec, api, stageState, ""),
 	)
 	if err := stage.Execute(ctx, ec, sp); err != nil {
 		return err
 	}
+	cluster := stageState["cluster"].(viridian.Cluster)
 	verbose := ec.Props().GetBool(clc.PropertyVerbose)
+	ec.PrintlnUnnecessary("")
 	if verbose {
 		row := output.Row{
 			output.Column{
@@ -90,36 +93,6 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func (ClusterCreateCmd) Unwrappable() {}
-
-func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, cluster viridian.Cluster) {
-	cfgName := cluster.Name
-	cp, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Waiting for the cluster to get ready")
-		if err := waitClusterState(ctx, ec, api, cluster.ID, stateRunning); err != nil {
-			// do not import the config and exit early
-			return nil, err
-		}
-		sp.SetText("Importing configuration")
-		zipPath, stop, err := api.DownloadConfig(ctx, cluster.ID)
-		if err != nil {
-			return nil, err
-		}
-		defer stop()
-		cfgPath, err := config.CreateFromZip(ctx, ec, cfgName, zipPath)
-		if err != nil {
-			return nil, err
-		}
-		return cfgPath, nil
-	})
-	if err != nil {
-		ec.Logger().Error(err)
-		return
-	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("Cluster %s was created.", cluster.Name))
-	ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, cp)
-	ec.PrintlnUnnecessary(fmt.Sprintf("Imported configuration: %s", cfgName))
-}
 
 func init() {
 	if enableInternalOps {

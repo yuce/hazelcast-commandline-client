@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
@@ -109,7 +110,7 @@ func Execute(ctx context.Context, ec plug.ExecContext, sp Provider) error {
 		})
 		if err != nil {
 			ec.PrintlnUnnecessary(fmt.Sprintf("FAIL %s: %s", stg.FailureMsg, err.Error()))
-			return err
+			return errors.WrappedError{Err: err}
 		}
 		stop()
 		ec.PrintlnUnnecessary(fmt.Sprintf("OK %s %s.", ss.indexText, stg.SuccessMsg))

@@ -10,17 +10,25 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, name, image, clusterType string, cb func(viridian.Cluster)) stage.Stage {
+func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, name, clusterType, image string, stageStage map[string]any) stage.Stage {
 	return stage.Stage{
 		ProgressMsg: fmt.Sprintf("Creating cluster %s", name),
 		SuccessMsg:  fmt.Sprintf("Created cluster %s", name),
 		FailureMsg:  fmt.Sprintf("Failed creating cluster"),
 		Func: func(status stage.Statuser) error {
+			var imageTag, hzVersion string
+			var err error
+			if image != "" {
+				imageTag, hzVersion, err = splitImageName(image)
+				if err != nil {
+					return err
+				}
+			}
 			c, err := getFirstAvailableK8sCluster(ctx, api)
 			if err != nil {
 				return err
 			}
-			cs, err := api.CreateCluster(ctx, name, clusterType, c.ID, "")
+			cs, err := api.CreateCluster(ctx, name, clusterType, c.ID, imageTag, hzVersion)
 			if err != nil {
 				return handleErrorResponse(ec, err)
 			}
@@ -36,26 +44,30 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 					return err
 				}
 			}
-			cb(cs)
+			stageStage["cluster"] = cs
 			return nil
 		},
 	}
 }
 
-func importConfigStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, cluster viridian.Cluster, cfgName string) stage.Stage {
+func importConfigStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, stageStage map[string]any, cfgName string) stage.Stage {
 	return stage.Stage{
-		ProgressMsg: fmt.Sprintf("Importing configuration %s", cfgName),
-		SuccessMsg:  fmt.Sprintf("Imported configuration", cfgName),
+		ProgressMsg: "Importing configuration",
+		SuccessMsg:  "Imported configuration",
 		FailureMsg:  "Failed importing the configuration",
 		Func: func(status stage.Statuser) error {
+			cluster := stageStage["cluster"].(viridian.Cluster)
 			zip, stop, err := api.DownloadConfig(ctx, cluster.ID)
 			if err != nil {
 				return handleErrorResponse(ec, err)
 			}
-			stop()
+			defer stop()
+			if cfgName == "" {
+				cfgName = cluster.Name
+			}
 			path, err := config.CreateFromZip(ctx, ec, cfgName, zip)
 			if err != nil {
-				return err
+				return handleErrorResponse(ec, err)
 			}
 			ec.Logger().Info("Imported configuration %s and saved to: %s", cfgName, path)
 			return nil

@@ -109,7 +109,7 @@ func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridi
 	return clusters[0], nil
 }
 
-func clusterName() string {
+func makeClusterName() string {
 	cwd, err := os.Getwd()
 	if err != nil {
 		cwd = "cluster"

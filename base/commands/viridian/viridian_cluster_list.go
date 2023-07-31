@@ -15,7 +15,7 @@ import (
 
 type ClusterListCmd struct{}
 
-func (cm ClusterListCmd) Init(cc plug.InitContext) error {
+func (ClusterListCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("list-clusters")
 	long := `Lists all Viridian clusters for the logged in API key.
 
@@ -28,7 +28,7 @@ Make sure you login before running this command.
 	return nil
 }
 
-func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -76,6 +76,8 @@ func (cm ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	return ec.AddOutputRows(ctx, rows...)
 }
+
+func (ClusterListCmd) Unwrappable() {}
 
 func init() {
 	if enableInternalOps {

@@ -4,22 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 const ClusterTypeDevMode = "DEVMODE"
 const ClusterTypeServerless = "SERVERLESS"
 
+type platformCustomization struct {
+	HzImageTag string `json:"hzImageTag"`
+	HzVersion  string `json:"hzVersion"`
+}
+
 type createClusterRequest struct {
-	KubernetesClusterID int    `json:"kubernetesClusterId"`
-	Name                string `json:"name"`
-	ClusterTypeID       int64  `json:"clusterTypeId"`
-	PlanName            string `json:"planName"`
+	KubernetesClusterID   int                    `json:"kubernetesClusterId"`
+	Name                  string                 `json:"name"`
+	ClusterTypeID         int64                  `json:"clusterTypeId"`
+	PlanName              string                 `json:"planName"`
+	PlatformCustomization *platformCustomization `json:"platformCustomization,omitempty"`
 }
 
 type createClusterResponse Cluster
 
-func (a API) CreateCluster(ctx context.Context, name string, clusterType string, k8sClusterID int, hzVersion string) (Cluster, error) {
+func (a API) CreateCluster(ctx context.Context, name, clusterType string, k8sClusterID int, imageTag, imageVersion string) (Cluster, error) {
 	if name == "" {
 		return Cluster{}, fmt.Errorf("cluster name cannot be blank")
 	}
@@ -28,15 +33,18 @@ func (a API) CreateCluster(ctx context.Context, name string, clusterType string,
 		return Cluster{}, err
 	}
 	clusterTypeID := cType.ID
-	planName := cType.Name
-	if strings.ToUpper(cType.Name) == ClusterTypeDevMode && hzVersion == "" {
-		planName = ClusterTypeServerless
-	}
+	planName := ClusterTypeServerless
 	c := createClusterRequest{
 		KubernetesClusterID: k8sClusterID,
 		Name:                name,
 		ClusterTypeID:       clusterTypeID,
 		PlanName:            planName,
+	}
+	if imageTag != "" {
+		c.PlatformCustomization = &platformCustomization{
+			HzImageTag: imageTag,
+			HzVersion:  imageVersion,
+		}
 	}
 	cluster, err := WithRetry(ctx, a, func() (Cluster, error) {
 		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token, c)

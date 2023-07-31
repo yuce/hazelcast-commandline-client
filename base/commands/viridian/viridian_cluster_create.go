@@ -89,6 +89,7 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		}
 		return ec.AddOutputRows(ctx, row)
 	}
+	ec.PrintlnUnnecessary("OK Cluster creation completed successfully.")
 	return nil
 }
 

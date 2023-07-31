@@ -25,6 +25,9 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+	if enableInternalOps {
+		cc.SetCommandGroup("viridian")
+	}
 	return nil
 }
 

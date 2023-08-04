@@ -17,7 +17,11 @@ import (
 type ClusterDeleteCmd struct{}
 
 func (ClusterDeleteCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandUsage("delete-cluster")
+	} else {
+		cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
+	}
 	long := `Deletes the given Viridian cluster.
 
 Make sure you login before running this command.

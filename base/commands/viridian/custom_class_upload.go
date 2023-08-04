@@ -8,6 +8,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 type CustomClassUploadCmd struct{}
@@ -49,7 +50,7 @@ func (cmd CustomClassUploadCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:upload-custom-class", &CustomClassUploadCmd{}))
 	}
 }

@@ -15,9 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
-	"gopkg.in/yaml.v2"
 
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
@@ -33,8 +34,6 @@ const (
 var (
 	ErrClusterFailed  = errors.New("cluster failed")
 	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
-	EnableInternalOps = "no"
-	enableInternalOps = false
 )
 
 func findTokenPath(apiKey string) (string, error) {
@@ -227,10 +226,4 @@ func splitImageName(image string) (name, hzVersion string, err error) {
 		return "", "", fmt.Errorf("invalid image name: %s", image)
 	}
 	return ps[0], ps[1], nil
-}
-
-func init() {
-	if EnableInternalOps == "yes" {
-		enableInternalOps = true
-	}
 }

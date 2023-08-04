@@ -17,11 +17,17 @@ import (
 )
 
 const (
-	EnvAPIBaseURL     = "HZ_CLOUD_COORDINATOR_BASE_URL"
-	EnvAPIKey         = "CLC_VIRIDIAN_API_KEY"
-	EnvAPISecret      = "CLC_VIRIDIAN_API_SECRET"
-	EnvAPI            = "CLC_EXPERIMENTAL_VIRIDIAN_API"
-	DefaultAPIBaseURL = "https://api.viridian.hazelcast.com"
+	EnvAPIBaseURL            = "HZ_CLOUD_COORDINATOR_BASE_URL"
+	EnvAPIKey                = "CLC_VIRIDIAN_API_KEY"
+	EnvAPISecret             = "CLC_VIRIDIAN_API_SECRET"
+	EnvAPI                   = "CLC_EXPERIMENTAL_VIRIDIAN_API"
+	DefaultAPIBaseURL        = "https://api.viridian.hazelcast.com"
+	DefaultSandboxAPIBaseURL = "https://api.sandbox.viridian.hazelcast.cloud"
+)
+
+var (
+	EnableInternalOps = "no"
+	enableInternalOps = false
 )
 
 type Wrapper[T any] struct {
@@ -219,6 +225,9 @@ func APIBaseURL() string {
 	if u != "" {
 		return u
 	}
+	if enableInternalOps {
+		return DefaultSandboxAPIBaseURL
+	}
 	return DefaultAPIBaseURL
 }
 
@@ -412,5 +421,18 @@ func APIClass() string {
 	if ac != "" {
 		return ac
 	}
+	if enableInternalOps {
+		return "sandbox"
+	}
 	return "api"
+}
+
+func InternalOpsEnabled() bool {
+	return enableInternalOps
+}
+
+func init() {
+	if EnableInternalOps == "yes" {
+		enableInternalOps = true
+	}
 }

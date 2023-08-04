@@ -10,6 +10,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 type CustomClassDeleteCmd struct{}
@@ -65,7 +66,7 @@ func (cmd CustomClassDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) e
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:delete-custom-class", &CustomClassDeleteCmd{}))
 	}
 }

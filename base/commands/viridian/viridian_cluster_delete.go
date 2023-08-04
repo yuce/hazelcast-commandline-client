@@ -11,6 +11,7 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
 type ClusterDeleteCmd struct{}
@@ -25,7 +26,7 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		cc.SetCommandGroup("viridian")
 		cc.SetPositionalArgCount(0, 0)
 	} else {
@@ -52,7 +53,7 @@ func (ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		}
 	}
 	var clusterNameOrID string
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		vc, err := loadVRDConfig()
 		if err != nil {
 			return fmt.Errorf("loading vrd config: %w", err)
@@ -80,7 +81,7 @@ func (ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func (ClusterDeleteCmd) Unwrappable() {}
 
 func init() {
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("delete-cluster", &ClusterDeleteCmd{}))
 	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))

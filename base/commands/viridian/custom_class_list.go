@@ -85,7 +85,7 @@ func (cmd CustomClassListCmd) Exec(ctx context.Context, ec plug.ExecContext) err
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:list-custom-classes", &CustomClassListCmd{}))
 	}
 }

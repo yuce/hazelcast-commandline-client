@@ -64,7 +64,7 @@ func (ct ClusterTypeListCmd) Exec(ctx context.Context, ec plug.ExecContext) erro
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:list-cluster-types", &ClusterTypeListCmd{}))
 	}
 }

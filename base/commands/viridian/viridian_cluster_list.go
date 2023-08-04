@@ -25,7 +25,7 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		cc.SetCommandGroup("viridian")
 	}
 	return nil
@@ -83,7 +83,7 @@ func (ClusterListCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func (ClusterListCmd) Unwrappable() {}
 
 func init() {
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("list-clusters", &ClusterListCmd{}))
 	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:list-clusters", &ClusterListCmd{}))

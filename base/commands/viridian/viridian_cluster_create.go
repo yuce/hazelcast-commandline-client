@@ -27,7 +27,7 @@ Make sure you login before running this command.
 	cc.SetPositionalArgCount(0, 0)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		cc.SetCommandGroup("viridian")
 		cc.AddStringFlag(flagImage, "", "", true, "Image name in the NAME:HZ_VERSION format")
 	} else {
@@ -48,7 +48,7 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	image := ec.Props().GetString(flagImage)
 	var imageTag string
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		// validating the image name
 		imageTag, _, err = splitImageName(image)
 		if err != nil {
@@ -96,7 +96,7 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 func (ClusterCreateCmd) Unwrappable() {}
 
 func init() {
-	if enableInternalOps {
+	if viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("create-cluster", &ClusterCreateCmd{}))
 	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:create-cluster", &ClusterCreateCmd{}))

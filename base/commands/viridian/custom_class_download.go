@@ -77,7 +77,7 @@ func (cmd CustomClassDownloadCmd) Exec(ctx context.Context, ec plug.ExecContext)
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:download-custom-class", &CustomClassDownloadCmd{}))
 	}
 }

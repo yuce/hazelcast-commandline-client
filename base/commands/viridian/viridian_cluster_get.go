@@ -122,7 +122,7 @@ func regionTitleSlice(regions []viridian.Region) []string {
 }
 
 func init() {
-	if !enableInternalOps {
+	if !viridian.InternalOpsEnabled() {
 		check.Must(plug.Registry.RegisterCommand("viridian:get-cluster", &ClusterGetCmd{}))
 	}
 }

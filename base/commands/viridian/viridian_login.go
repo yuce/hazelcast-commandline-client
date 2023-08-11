@@ -20,6 +20,7 @@ const (
 	propAPIKey    = "api-key"
 	propAPISecret = "api-secret"
 	secretPrefix  = "viridian"
+	propForce     = "force"
 )
 
 type LoginCmd struct{}

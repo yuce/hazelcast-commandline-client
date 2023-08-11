@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 const ClusterTypeDevMode = "DEVMODE"
@@ -53,7 +54,8 @@ func (a *API) CreateCluster(ctx context.Context, name, clusterType string, k8sCl
 		}
 	}
 	cluster, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Cluster, error) {
-		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token, c)
+		u := a.makeURL("/cluster")
+		c, err := doPost[createClusterRequest, createClusterResponse](ctx, u, a.Token, c)
 		return Cluster(c), err
 	})
 	if err != nil {
@@ -68,7 +70,8 @@ func (a *API) StopCluster(ctx context.Context, idOrName string) error {
 		return err
 	}
 	ok, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (bool, error) {
-		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/stop", c.ID), a.Token, nil)
+		u := a.makeURL("/cluster/%s/stop", c.ID)
+		return doPost[[]byte, bool](ctx, u, a.Token, nil)
 	})
 	if err != nil {
 		return fmt.Errorf("stopping cluster: %w", err)
@@ -81,7 +84,8 @@ func (a *API) StopCluster(ctx context.Context, idOrName string) error {
 
 func (a *API) ListClusters(ctx context.Context) ([]Cluster, error) {
 	csw, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Wrapper[[]Cluster], error) {
-		return doGet[Wrapper[[]Cluster]](ctx, "/cluster", a.Token)
+		u := a.makeURL("/cluster")
+		return doGet[Wrapper[[]Cluster]](ctx, u, a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing clusters: %w", err)
@@ -95,7 +99,8 @@ func (a *API) ResumeCluster(ctx context.Context, idOrName string) error {
 		return err
 	}
 	ok, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (bool, error) {
-		return doPost[[]byte, bool](ctx, fmt.Sprintf("/cluster/%s/resume", c.ID), a.Token, nil)
+		u := a.makeURL("/cluster/%s/resume", c.ID)
+		return doPost[[]byte, bool](ctx, u, a.Token, nil)
 	})
 	if err != nil {
 		return fmt.Errorf("resuming cluster: %w", err)
@@ -115,7 +120,7 @@ func (a *API) DeleteCluster(ctx context.Context, idOrName string, force bool) er
 	if force {
 		qs = "force=true"
 	}
-	u := fmt.Sprintf("/cluster/%s?%s", c.ID, qs)
+	u := a.makeURL("/cluster/%s?%s", c.ID, qs)
 	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
 		err = doDelete(ctx, u, a.Token)
 		if err != nil {
@@ -135,7 +140,8 @@ func (a *API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) 
 		return Cluster{}, err
 	}
 	c, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Cluster, error) {
-		return doGet[Cluster](ctx, fmt.Sprintf("/cluster/%s", cluster.ID), a.Token)
+		u := a.makeURL("/cluster/%s", cluster.ID)
+		return doGet[Cluster](ctx, u, a.Token)
 	})
 	if err != nil {
 		return Cluster{}, fmt.Errorf("retrieving cluster: %w", err)
@@ -145,10 +151,18 @@ func (a *API) GetCluster(ctx context.Context, idOrName string) (Cluster, error) 
 
 func (a *API) ListClusterTypes(ctx context.Context) ([]ClusterType, error) {
 	csw, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Wrapper[[]ClusterType], error) {
-		return doGet[Wrapper[[]ClusterType]](ctx, "/cluster_types", a.Token)
+		u := a.makeURL("/cluster_types")
+		return doGet[Wrapper[[]ClusterType]](ctx, u, a.Token)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("listing cluster types: %w", err)
 	}
 	return csw.Content, nil
+}
+
+func (a *API) makeURL(format string, args ...any) string {
+	var sb strings.Builder
+	sb.WriteString(a.APIBaseURL)
+	sb.WriteString(fmt.Sprintf(format, args...))
+	return sb.String()
 }

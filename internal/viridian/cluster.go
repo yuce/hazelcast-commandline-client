@@ -106,13 +106,18 @@ func (a *API) ResumeCluster(ctx context.Context, idOrName string) error {
 	return nil
 }
 
-func (a *API) DeleteCluster(ctx context.Context, idOrName string) error {
+func (a *API) DeleteCluster(ctx context.Context, idOrName string, force bool) error {
 	c, err := a.FindCluster(ctx, idOrName)
 	if err != nil {
 		return err
 	}
+	qs := ""
+	if force {
+		qs = "force=true"
+	}
+	u := fmt.Sprintf("/cluster/%s?%s", c.ID, qs)
 	_, err = RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (any, error) {
-		err = doDelete(ctx, fmt.Sprintf("/cluster/%s", c.ID), a.Token)
+		err = doDelete(ctx, u, a.Token)
 		if err != nil {
 			return nil, err
 		}

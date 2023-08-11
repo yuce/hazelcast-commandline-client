@@ -32,6 +32,7 @@ Make sure you login before running this command.
 	if enableInternalOps {
 		cc.SetCommandGroup("viridian")
 		cc.SetPositionalArgCount(0, 0)
+		cc.AddBoolFlag(propForce, "", false, false, "delete the cluster regardless of its state")
 	} else {
 		cc.SetPositionalArgCount(1, 1)
 	}
@@ -67,7 +68,8 @@ func (ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Deleting the cluster")
-		err := api.DeleteCluster(ctx, clusterNameOrID)
+		f := ec.Props().GetBool(propForce)
+		err := api.DeleteCluster(ctx, clusterNameOrID, f)
 		if err != nil {
 			return nil, err
 		}

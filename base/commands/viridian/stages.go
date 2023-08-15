@@ -32,9 +32,6 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			if err != nil {
 				return handleErrorResponse(ec, err)
 			}
-			if err := waitClusterState(ctx, ec, api, cs.ID, stateRunning); err != nil {
-				return handleErrorResponse(ec, err)
-			}
 			if viridian.InternalOpsEnabled() {
 				vc := vrdConfig{
 					ClusterID: cs.ID,
@@ -45,6 +42,9 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 				}
 			}
 			stageStage["cluster"] = cs
+			if err := waitClusterState(ctx, ec, api, cs.ID, stateRunning); err != nil {
+				return handleErrorResponse(ec, err)
+			}
 			return nil
 		},
 	}

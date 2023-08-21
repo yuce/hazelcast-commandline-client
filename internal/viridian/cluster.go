@@ -46,12 +46,6 @@ func (a *API) CreateCluster(ctx context.Context, name, clusterType string, k8sCl
 			HzVersion:  imageVersion,
 		}
 	}
-	if imageTag != "" {
-		c.PlatformCustomization = &platformCustomization{
-			HzImageTag: imageTag,
-			HzVersion:  imageVersion,
-		}
-	}
 	cluster, err := RetryOnAuthFail(ctx, a, func(ctx context.Context, token string) (Cluster, error) {
 		c, err := doPost[createClusterRequest, createClusterResponse](ctx, "/cluster", a.Token, c)
 		return Cluster(c), err

@@ -29,7 +29,8 @@ Make sure you login before running this command.
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	if viridian.InternalOpsEnabled() {
 		cc.SetCommandGroup("viridian")
-		cc.AddStringFlag(flagImage, "", "", true, "Image name in the NAME:HZ_VERSION format")
+		cc.AddStringFlag(flagImageTag, "", "", true, "Image name")
+		cc.AddStringFlag(flagHazelcastVersion, "", "", true, "Hazelcast version")
 	} else {
 		cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
 	}
@@ -46,15 +47,8 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if clusterType == "" {
 		clusterType = viridian.ClusterTypeServerless
 	}
-	image := ec.Props().GetString(flagImage)
-	var imageTag string
-	if viridian.InternalOpsEnabled() {
-		// validating the image name
-		imageTag, _, err = splitImageName(image)
-		if err != nil {
-			return err
-		}
-	}
+	imageTag := ec.Props().GetString(flagImageTag)
+	hzVersion := ec.Props().GetString(flagHazelcastVersion)
 	name := ec.Props().GetString(flagName)
 	if name == "" {
 		if imageTag != "" {
@@ -65,7 +59,7 @@ func (ClusterCreateCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	}
 	stageState := map[string]any{}
 	sp := stage.NewFixedProvider(
-		createStage(ctx, ec, api, name, clusterType, image, stageState),
+		createStage(ctx, ec, api, name, clusterType, imageTag, hzVersion, stageState),
 		importConfigStage(ctx, ec, api, stageState, ""),
 	)
 	if err := stage.Execute(ctx, ec, sp); err != nil {

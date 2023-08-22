@@ -8,5 +8,5 @@ const (
 	flagOutputDir        = "output-dir"
 	flagHazelcastVersion = "hazelcast-version"
 	fmtSecretFileName    = "%s-%s.secret"
-	flagImage            = "image"
+	flagImageTag         = "image-tag"
 )

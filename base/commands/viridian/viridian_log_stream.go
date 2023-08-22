@@ -26,7 +26,11 @@ const (
 type StreamLogCmd struct{}
 
 func (cm StreamLogCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stream-logs [cluster-ID/name]")
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandUsage("stream-logs")
+	} else {
+		cc.SetCommandUsage("stream-logs [cluster-ID/name]")
+	}
 	long := `Outputs the logs of the given Viridian cluster as a stream.
 
 Make sure you authenticate to the Viridian API using 'viridian login' before running this command.
@@ -40,7 +44,12 @@ The log format may be one of:
 `
 	short := "Streams logs of a Viridian cluster"
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandGroup("viridian")
+		cc.SetPositionalArgCount(0, 0)
+	} else {
+		cc.SetPositionalArgCount(1, 1)
+	}
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propLogFormat, "", "basic", false,
 		"set the log format, either predefined or free form")
@@ -57,7 +66,16 @@ func (cm StreamLogCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return fmt.Errorf("invalid log format %s: %w", f, err)
 	}
-	clusterNameOrID := ec.Args()[0]
+	var clusterNameOrID string
+	if viridian.InternalOpsEnabled() {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.Args()[0]
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		lf := newLogFixer(ec.Stdout(), t)
 		for {
@@ -197,7 +215,9 @@ func loggerTemplate(format string) string {
 }
 
 func init() {
-	if !viridian.InternalOpsEnabled() {
+	if viridian.InternalOpsEnabled() {
+		check.Must(plug.Registry.RegisterCommand("stream-logs", &StreamLogCmd{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCmd{}))
 	}
 }

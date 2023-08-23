@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -37,6 +38,15 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			stageStage["cluster"] = cs
 			if err := waitClusterState(ctx, ec, api, cs.ID, stateRunning); err != nil {
 				return handleErrorResponse(ec, err)
+			}
+			clusters, err := api.ListClusters(ctx)
+			if err != nil {
+				return err
+			}
+			if clusters[0].HazelcastVersion != hzVersion {
+				ec.PrintlnUnnecessary(
+					fmt.Sprintf("\n%sWarning: version %s does not exist, creating cluster with version: %s",
+						strings.Repeat(" ", 12), hzVersion, clusters[0].HazelcastVersion))
 			}
 			return nil
 		},

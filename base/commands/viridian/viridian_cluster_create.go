@@ -29,7 +29,7 @@ Make sure you login before running this command.
 	cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
 	if viridian.InternalOpsEnabled() {
 		cc.SetCommandGroup("viridian")
-		cc.AddStringFlag(flagImageTag, "", "", true, "Image name")
+		cc.AddStringFlag(flagImageTag, "", "", true, "Image name in the format: name.surname")
 		cc.AddStringFlag(flagHazelcastVersion, "", "", true, "Hazelcast version")
 	} else {
 		cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")

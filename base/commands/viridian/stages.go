@@ -11,6 +11,8 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
+const versionFallbackWarn = "\n%sWarning: version %s does not exist, creating cluster with version: %s"
+
 func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, name, clusterType, imageTag, hzVersion string, stageStage map[string]any) stage.Stage {
 	return stage.Stage{
 		ProgressMsg: fmt.Sprintf("Creating cluster %s", name),
@@ -43,10 +45,8 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			if err != nil {
 				return err
 			}
-			if clusters[0].HazelcastVersion != hzVersion {
-				ec.PrintlnUnnecessary(
-					fmt.Sprintf("\n%sWarning: version %s does not exist, creating cluster with version: %s",
-						strings.Repeat(" ", 12), hzVersion, clusters[0].HazelcastVersion))
+			if hzVersion != "" && clusters[0].HazelcastVersion != hzVersion {
+				ec.PrintlnUnnecessary(fmt.Sprintf(versionFallbackWarn, strings.Repeat(" ", 12), hzVersion, clusters[0].HazelcastVersion))
 			}
 			return nil
 		},

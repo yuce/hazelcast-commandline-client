@@ -45,8 +45,9 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			if err != nil {
 				return err
 			}
-			if hzVersion != "" && clusters[0].HazelcastVersion != hzVersion {
-				ec.PrintlnUnnecessary(fmt.Sprintf(versionFallbackWarn, strings.Repeat(" ", 12), hzVersion, clusters[0].HazelcastVersion))
+			cv := clusters[0].HazelcastVersion
+			if hzVersion != "" && cv != hzVersion {
+				ec.PrintlnUnnecessary(fmt.Sprintf(versionFallbackWarn, strings.Repeat(" ", 12), hzVersion, cv))
 			}
 			return nil
 		},

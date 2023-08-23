@@ -3,6 +3,7 @@ package viridian
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
@@ -10,20 +11,14 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, name, clusterType, image string, stageStage map[string]any) stage.Stage {
+const versionFallbackWarn = "\n%sWarning: version %s does not exist, creating cluster with version: %s"
+
+func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, name, clusterType, imageTag, hzVersion string, stageStage map[string]any) stage.Stage {
 	return stage.Stage{
 		ProgressMsg: fmt.Sprintf("Creating cluster %s", name),
 		SuccessMsg:  fmt.Sprintf("Created cluster %s", name),
 		FailureMsg:  fmt.Sprintf("Failed creating cluster"),
 		Func: func(status stage.Statuser) error {
-			var imageTag, hzVersion string
-			var err error
-			if image != "" {
-				imageTag, hzVersion, err = splitImageName(image)
-				if err != nil {
-					return err
-				}
-			}
 			c, err := getFirstAvailableK8sCluster(ctx, api)
 			if err != nil {
 				return err
@@ -34,8 +29,9 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			}
 			if viridian.InternalOpsEnabled() {
 				vc := vrdConfig{
-					ClusterID: cs.ID,
-					ImageName: image,
+					ClusterID:        cs.ID,
+					ImageTag:         imageTag,
+					HazelcastVersion: hzVersion,
 				}
 				if err := saveVRDConfig(vc); err != nil {
 					return err
@@ -44,6 +40,14 @@ func createStage(ctx context.Context, ec plug.ExecContext, api *viridian.API, na
 			stageStage["cluster"] = cs
 			if err := waitClusterState(ctx, ec, api, cs.ID, stateRunning); err != nil {
 				return handleErrorResponse(ec, err)
+			}
+			clusters, err := api.ListClusters(ctx)
+			if err != nil {
+				return err
+			}
+			cv := clusters[0].HazelcastVersion
+			if hzVersion != "" && cv != hzVersion {
+				ec.PrintlnUnnecessary(fmt.Sprintf(versionFallbackWarn, strings.Repeat(" ", 12), hzVersion, cv))
 			}
 			return nil
 		},

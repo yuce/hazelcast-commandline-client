@@ -30,10 +30,10 @@ Make sure you login before running this command.
 		cc.SetCommandGroup("viridian")
 		cc.AddStringFlag(flagImageTag, "", "", true, "Image tag in the format: name.surname")
 		cc.AddStringFlag(flagHazelcastVersion, "", "", true, "Hazelcast version")
-		cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given the same name as image-tag will be used.")
+		cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given the same name as image-tag will be used")
 	} else {
 		cc.AddStringFlag(flagClusterType, "", viridian.ClusterTypeServerless, false, "type for the cluster")
-		cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used.")
+		cc.AddStringFlag(flagName, "", "", false, "specify the cluster name; if not given an auto-generated name is used")
 	}
 	return nil
 }

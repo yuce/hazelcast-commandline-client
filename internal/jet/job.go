@@ -143,10 +143,12 @@ func (j Jet) ResumeJob(ctx context.Context, jobID int64) error {
 func EnsureJobState(jobs []control.JobAndSqlSummary, jobNameOrID string, state int32) (bool, error) {
 	for _, j := range jobs {
 		if j.NameOrId == jobNameOrID {
-			if j.Status == state {
+			switch j.Status {
+			case state:
 				return true, nil
-			}
-			if j.Status == JobStatusFailed {
+			case JobStatusCompleted:
+				return true, nil
+			case JobStatusFailed:
 				return false, ErrJobFailed
 			}
 			return false, nil

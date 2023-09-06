@@ -15,14 +15,26 @@ import (
 type ClusterStopCmd struct{}
 
 func (cm ClusterStopCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
-	long := `Stops the given Viridian cluster.
+	var long, short string
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandUsage("stop-cluster [flags]")
+		long = `Stops the cluster.
 
 Make sure you login before running this command.
 `
-	short := "Stops the given Viridian cluster"
+		short = "Stops the cluster"
+		cc.SetPositionalArgCount(0, 0)
+		cc.SetCommandGroup("viridian")
+	} else {
+		cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
+		long = `Stops the given Viridian cluster.
+
+Make sure you login before running this command.
+`
+		short = "Stops the given Viridian cluster"
+		cc.SetPositionalArgCount(1, 1)
+	}
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }
@@ -32,7 +44,16 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	var clusterNameOrID string
+	if viridian.InternalOpsEnabled() {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.Args()[0]
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Pausing the cluster")
 		err := api.StopCluster(ctx, clusterNameOrID)
@@ -50,7 +71,9 @@ func (cm ClusterStopCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 }
 
 func init() {
-	if !viridian.InternalOpsEnabled() {
+	if viridian.InternalOpsEnabled() {
+		check.Must(plug.Registry.RegisterCommand("stop-cluster", &ClusterStopCmd{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:stop-cluster", &ClusterStopCmd{}))
 	}
 }

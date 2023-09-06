@@ -15,14 +15,26 @@ import (
 type ClusterResumeCmd struct{}
 
 func (cm ClusterResumeCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("resume-cluster [cluster-ID/name] [flags]")
-	long := `Resumes the given Viridian cluster.
+	var long, short string
+	if viridian.InternalOpsEnabled() {
+		long = `Resumes the cluster.
 
 Make sure you login before running this command.
 `
-	short := "Resumes the given Viridian cluster"
+		short = "Resumes the cluster"
+		cc.SetCommandUsage("resume-cluster [flags]")
+		cc.SetPositionalArgCount(0, 0)
+		cc.SetCommandGroup("viridian")
+	} else {
+		long = `Resumes the given Viridian cluster.
+
+Make sure you login before running this command.
+`
+		short = "Resumes the given Viridian cluster"
+		cc.SetCommandUsage("resume-cluster [cluster-ID/name] [flags]")
+		cc.SetPositionalArgCount(1, 1)
+	}
 	cc.SetCommandHelp(long, short)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	return nil
 }
@@ -32,7 +44,16 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.Args()[0]
+	var clusterNameOrID string
+	if viridian.InternalOpsEnabled() {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.Args()[0]
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		sp.SetText("Resuming the cluster")
 		err := api.ResumeCluster(ctx, clusterNameOrID)
@@ -50,7 +71,9 @@ func (cm ClusterResumeCmd) Exec(ctx context.Context, ec plug.ExecContext) error 
 }
 
 func init() {
-	if !viridian.InternalOpsEnabled() {
+	if viridian.InternalOpsEnabled() {
+		check.Must(plug.Registry.RegisterCommand("resume-cluster", &ClusterResumeCmd{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:resume-cluster", &ClusterResumeCmd{}))
 	}
 }

@@ -259,3 +259,34 @@ func DecodeListMultiFrameForJobAndSqlSummary(frameIterator *proto.ForwardFrameIt
 	frameIterator.Next()
 	return result
 }
+
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+	result := make([]*iserialization.Data, 0)
+	frameIterator.Next()
+	for !NextFrameIsDataStructureEndFrame(frameIterator) {
+		d := DecodeData(frameIterator)
+		result = append(result, &d)
+	}
+	frameIterator.Next()
+	return result
+}
+
+func DecodeListMultiFrameForIndexConfig(frameIterator *proto.ForwardFrameIterator) []types.IndexConfig {
+	var result []types.IndexConfig
+	if frameIterator.HasNext() {
+		frameIterator.Next()
+
+		for !NextFrameIsDataStructureEndFrame(frameIterator) {
+			result = append(result, DecodeIndexConfig(frameIterator))
+		}
+		frameIterator.Next()
+	}
+	return result
+}
+
+func DecodeNullableForBitmapIndexOptions(frameIterator *proto.ForwardFrameIterator) types.BitmapIndexOptions {
+	if NextFrameIsNullFrame(frameIterator) {
+		return types.BitmapIndexOptions{}
+	}
+	return DecodeBitmapIndexOptions(frameIterator)
+}

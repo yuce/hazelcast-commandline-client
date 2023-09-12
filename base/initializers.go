@@ -1,3 +1,5 @@
+//go:build base
+
 package base
 
 import (
@@ -16,28 +18,10 @@ type GlobalInitializer struct{}
 
 func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	// base group IDs
-	cc.AddCommandGroup(clc.GroupDDSID, "Distributed Data Structures")
-	cc.AddCommandGroup(clc.GroupJetID, "Jet")
-	// output type flag
-	pns := plug.Registry.PrinterNames()
-	slices.Sort(pns)
-	usage := fmt.Sprintf("set the output type, one of: %s", strings.Join(pns, ", "))
-	// format is delimited for command line mode.
-	var format string
-	if slices.Contains(pns, PrinterDelimited) {
-		format = PrinterDelimited
-	}
-	// XXX:
-	// format is table for the interactive mode.
-	if cc.Interactive() {
-		if slices.Contains(pns, PrinterTable) {
-			format = PrinterTable
-		}
-	}
-	// other flags
-	cc.AddStringFlag(clc.PropertyFormat, clc.ShortcutFormat, format, false, usage)
+	updateFormatFlag(cc)
 	cc.AddBoolFlag(clc.PropertyVerbose, "", false, false, "enable verbose output")
 	cc.AddBoolFlag(clc.PropertyQuiet, "q", false, false, "disable unnecessary output")
+	cc.AddStringFlag(clc.PropertyTimeout, "", "", false, "timeout for operation to complete")
 	lp := paths.DefaultLogPath(time.Now())
 	if !cc.Interactive() {
 		cc.AddStringFlag(clc.PropertyConfig, clc.ShortcutConfig, "", false, "set the configuration")
@@ -49,9 +33,27 @@ func (g GlobalInitializer) Init(cc plug.InitContext) error {
 	cc.AddStringConfig(clc.PropertyClusterName, "dev", "", "cluster name")
 	cc.AddStringConfig(clc.PropertyLogPath, "", clc.PropertyLogPath, "log path")
 	cc.AddStringConfig(clc.PropertyLogLevel, "", clc.PropertyLogLevel, "log level")
-	cc.AddStringConfig(clc.PropertySchemaDir, "", clc.PropertySchemaDir, "schema directory")
 	cc.AddStringConfig(clc.PropertyClusterDiscoveryToken, "", "", "Viridian token")
 	return nil
+}
+
+func updateFormatFlag(cc plug.InitContext) {
+	pns := plug.Registry.PrinterNames()
+	slices.Sort(pns)
+	formatUsage := fmt.Sprintf("set the output format, one of: %s", strings.Join(pns, ", "))
+	// format is delimited for command line mode.
+	var format string
+	if slices.Contains(pns, PrinterDelimited) {
+		format = PrinterDelimited
+	}
+	// format is table for the interactive mode.
+	if cc.Interactive() {
+		if slices.Contains(pns, PrinterTable) {
+			format = PrinterTable
+		}
+	}
+	// other flags
+	cc.AddStringFlag(clc.PropertyFormat, clc.ShortcutFormat, format, false, formatUsage)
 }
 
 func init() {

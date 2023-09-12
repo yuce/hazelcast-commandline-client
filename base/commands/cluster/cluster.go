@@ -10,11 +10,11 @@ import (
 type Cmd struct{}
 
 func (cm Cmd) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("cluster [command]")
 	cc.AddCommandGroup("cluster", "Cluster Operations")
 	cc.SetCommandGroup("cluster")
 	cc.SetTopLevel(true)
 	help := "Cluster operations"
-	cc.SetCommandUsage("cluster [command]")
 	cc.SetCommandHelp(help, help)
 	return nil
 }

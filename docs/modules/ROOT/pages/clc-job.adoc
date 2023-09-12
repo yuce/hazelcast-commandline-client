@@ -25,8 +25,7 @@ clc job [command] [options]
 
 Creates a Jet job using the provided Jar file.
 
-This command requires a Viridian or a Hazelcast cluster
-having version 5.3.0-BETA-2 or better.
+This command requires a Hazelcast {hazelcast-cloud} or Hazelcast Platform cluster of version 5.3.0 or above.
 
 Usage:
 
@@ -72,17 +71,22 @@ Must include the package name, such as: `com.example.JetJob`.
 |Name of the snapshot to initialize the job with.
 |
 
+|`--wait`
+|Optional
+|Waits for the job to be started.
+|`false`
+
 |===
 
 == clc job cancel
 
-Cancels one or more Jet jobs.
+Cancels the job with the given ID or name.
 
 Usage:
 
 [source,bash]
 ----
-clc job cancel [job-ID/name, ...] [flags]
+clc job cancel [job-ID/name] [flags]
 ----
 
 Parameters:
@@ -93,7 +97,7 @@ Parameters:
 
 |`job-ID/name`
 |Required
-|One or more Job IDs (UUID or integer) or job names.
+|Job ID (UUID or integer) or job name.
 |
 
 |`--force`
@@ -101,11 +105,16 @@ Parameters:
 |Force cancelling the job. This is useful for cancelling suspended jobs.
 |`false`
 
+|`--wait`
+|Optional
+|Waits for the job to be terminated.
+|`false`
+
 |===
 
 == clc job list
 
-Lists Jet jobs.
+Lists jobs.
 
 Usage:
 
@@ -144,13 +153,13 @@ clc job list
 
 == clc job restart
 
-Restarts one or more Jet jobs.
+Restarts the job with the given ID or name.
 
 Usage:
 
 [source,bash]
 ----
-clc job restart [job-ID/name, ...] [flags]
+clc job restart [job-ID/name] [flags]
 ----
 
 Parameters:
@@ -161,7 +170,7 @@ Parameters:
 
 |`job-ID/name`
 |Required
-|One or more Job IDs (UUID or integer) or job names.
+|Job ID (UUID or integer) or job name.
 |
 
 |`--force`
@@ -169,11 +178,16 @@ Parameters:
 |Force restart the job.
 |`false`
 
+|`--wait`
+|Optional
+|Waits for the job to be restarted.
+|`false`
+
 |===
 
 == clc job resume
 
-Resumes a suspended a Jet job.
+Resumes a suspended job.
 
 Usage:
 
@@ -193,18 +207,22 @@ Parameters:
 |The Job with ID (UUID or integer) or with name to resume.
 |
 
-|===
+|`--wait`
+|Optional
+|Waits for the job to be resumed.
+|`false`
 
+|===
 
 == clc job suspend
 
-Suspends one or more Jet jobs.
+Suspends the job with the given ID or name.
 
 Usage:
 
 [source,bash]
 ----
-clc job suspend [job-ID/name, ...] [flags]
+clc job suspend [job-ID/name] [flags]
 ----
 
 Parameters:
@@ -215,7 +233,7 @@ Parameters:
 
 |`job-ID/name`
 |Required
-|One or more Job IDs (UUID or integer) or job names.
+|Job ID (UUID or integer) or job name.
 |
 
 |`--force`
@@ -223,11 +241,16 @@ Parameters:
 |Force suspend the job.
 |`false`
 
+|`--wait`
+|Optional
+|Waits for the job to be suspended.
+|`false`
+
 |===
 
 == clc job export-snapshot
 
-Exports a snapshot from a Jet job. Note that this feature requires Viridian or Hazelcast Enterprise.
+Exports a snapshot from a Jet job. This feature requires a Hazelcast {hazelcast-cloud} or Hazelcast Enterprise cluster.
 
 Usage:
 

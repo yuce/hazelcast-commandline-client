@@ -1,9 +1,10 @@
 .PHONY: build test test-cover view-cover
 
 GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || echo unknown)
-CLC_VERSION ?= v0.0.0
-LDFLAGS = "-s -w -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'"
-TEST_FLAGS ?= -v -count 1
+CLC_VERSION ?= v0.0.0-CUSTOMBUILD
+MAIN_CMD_HELP ?= Hazelcast CLC
+LDFLAGS = -s -w -X 'github.com/hazelcast/hazelcast-commandline-client/clc/cmd.MainCommandShortHelp=$(MAIN_CMD_HELP)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.GitCommit=$(GIT_COMMIT)' -X 'github.com/hazelcast/hazelcast-commandline-client/internal.Version=$(CLC_VERSION)' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientType=CLC' -X 'github.com/hazelcast/hazelcast-go-client/internal.ClientVersion=$(CLC_VERSION)'
+TEST_FLAGS ?= -count 1 -timeout 30m -race
 COVERAGE_OUT = coverage.out
 PACKAGES = $(shell go list ./... | grep -v internal/it | tr '\n' ',')
 BINARY_NAME ?= clc
@@ -14,23 +15,24 @@ RELEASE_FILE ?= release.txt
 TARGZ ?= true
 
 build:
-	CGO_ENABLED=0 go build -tags base,hazelcastinternal,hazelcastinternaltest -ldflags $(LDFLAGS)  -o build/$(BINARY_NAME) ./cmd/clc
+	CGO_ENABLED=0 go build -tags base,std,hazelcastinternal,hazelcastinternaltest -ldflags "$(LDFLAGS)"  -o build/$(BINARY_NAME) ./cmd/clc
 
 test:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) ./...
 
 test-cover:
-	go test -tags base,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
+	go test -tags base,std,hazelcastinternal,hazelcastinternaltest -p 1 $(TEST_FLAGS) -coverprofile=coverage.out -coverpkg $(PACKAGES) -coverprofile=$(COVERAGE_OUT) ./...
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:
 	go tool cover -html $(COVERAGE_OUT) -o coverage.html
 
 release: build
-	mkdir -p build/$(RELEASE_BASE)
+	mkdir -p build/$(RELEASE_BASE)/examples
 	cp LICENSE build/$(RELEASE_BASE)/LICENSE.txt
 	cp README.md build/$(RELEASE_BASE)/README.txt
 	cp build/$(BINARY_NAME) build/$(RELEASE_BASE)
+	cp examples/sql/dessert.sql build/$(RELEASE_BASE)/examples
 ifeq ($(TARGZ), false)
 	cd build && zip -r $(RELEASE_BASE).zip $(RELEASE_BASE)
 	echo $(RELEASE_BASE).zip >> build/$(RELEASE_FILE)

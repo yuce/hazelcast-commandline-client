@@ -1,4 +1,4 @@
-//go:build base || sql
+//go:build std || sql
 
 package sql
 
@@ -11,32 +11,39 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/base"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
+	clcsql "github.com/hazelcast/hazelcast-commandline-client/clc/sql"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 )
 
 const (
-	propertyUseMappingSuggestion = "use-mapping-suggestion"
-	minServerVersion             = "5.0.0"
+	minServerVersion = "5.0.0"
+	argQuery         = "query"
+	argTitleQuery    = "query"
 )
+
+type arg0er interface {
+	Arg0() string
+}
 
 type SQLCommand struct{}
 
-func (cm *SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
+func (SQLCommand) Augment(ec plug.ExecContext, props *plug.Properties) error {
 	// set the default format to table in the interactive mode
-	if ec.CommandName() == "clc shell" && len(ec.Args()) == 0 {
-		props.Set(clc.PropertyFormat, base.PrinterTable)
+	if ecc, ok := ec.(arg0er); ok {
+		if ec.CommandName() == ecc.Arg0()+" shell" && len(ec.Args()) == 0 {
+			props.Set(clc.PropertyFormat, base.PrinterTable)
+		}
 	}
 	return nil
 }
 
-func (cm *SQLCommand) Init(cc plug.InitContext) error {
+func (SQLCommand) Init(cc plug.InitContext) error {
 	if cc.Interactive() {
 		return errors.ErrNotAvailable
 	}
-	cc.SetCommandUsage("sql [query] [flags]")
-	cc.SetPositionalArgCount(1, 1)
+	cc.SetCommandUsage("sql")
 	cc.AddCommandGroup("sql", "SQL")
 	cc.SetCommandGroup("sql")
 	long := fmt.Sprintf(`Runs the given SQL query or starts the SQL shell
@@ -47,35 +54,35 @@ This command requires a Viridian or a Hazelcast cluster
 having version %s or better.
 `, minServerVersion)
 	cc.SetCommandHelp(long, "Run SQL")
-	cc.AddBoolFlag(propertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
+	cc.AddBoolFlag(clcsql.PropertyUseMappingSuggestion, "", false, false, "execute the proposed CREATE MAPPING suggestion and retry the query")
+	cc.AddStringArg(argQuery, argTitleQuery)
 	return nil
 }
 
-func (cm *SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (SQLCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	// this method is only for the non-interactive mode
 	if len(ec.Args()) < 1 {
 		return nil
 	}
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
-		return fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
-	}
-	query := ec.Args()[0]
-	res, stop, err := cm.execQuery(ctx, query, ec)
+	query := ec.GetStringArg(argQuery)
+	resV, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
+		if sv, ok := cmd.CheckServerCompatible(ci, minServerVersion); !ok {
+			return nil, fmt.Errorf("server (%s) does not support this command, at least %s is expected", sv, minServerVersion)
+		}
+		sp.SetText("Executing SQL")
+		return clcsql.ExecSQL(ctx, ec, query)
+	})
 	if err != nil {
 		return err
 	}
 	// this should be deferred because UpdateOutput will iterate on the result
 	defer stop()
-	verbose := ec.Props().GetBool(clc.PropertyVerbose)
-	return UpdateOutput(ctx, ec, res, verbose)
-}
-
-func (cm *SQLCommand) execQuery(ctx context.Context, query string, ec plug.ExecContext) (sql.Result, context.CancelFunc, error) {
-	return ExecSQL(ctx, ec, query)
+	res := resV.(sql.Result)
+	return clcsql.UpdateOutput(ctx, ec, res)
 }
 
 func init() {

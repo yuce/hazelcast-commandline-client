@@ -16,12 +16,12 @@ import (
 	ny "github.com/nyaosorg/go-readline-ny"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
-	cmderrors "github.com/hazelcast/hazelcast-commandline-client/errors"
+	hzerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	. "github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/str"
 )
 
 const (
-	CmdPrefix    = `\`
 	envStyler    = "CLC_EXPERIMENTAL_STYLER"
 	envFormatter = "CLC_EXPERIMENTAL_FORMATTER"
 	EnvReadline  = "CLC_EXPERIMENTAL_READLINE"
@@ -33,11 +33,12 @@ type EndLineFn func(line string, multiline bool) (string, bool)
 
 type TextFn func(ctx context.Context, stdout io.Writer, text string) error
 
+type PromptFn func() string
 type Shell struct {
 	lr            LineReader
 	endLineFn     EndLineFn
 	textFn        TextFn
-	prompt1       string
+	prompt1Fn     PromptFn
 	prompt2       string
 	historyPath   string
 	stderr        io.Writer
@@ -46,12 +47,12 @@ type Shell struct {
 	commentPrefix string
 }
 
-func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin io.Reader, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
+func New(prompt1Fn PromptFn, prompt2, historyPath string, stdout, stderr io.Writer, stdin io.Reader, endLineFn EndLineFn, textFn TextFn) (*Shell, error) {
 	stdout, stderr = fixStdoutStderr(stdout, stderr)
 	sh := &Shell{
 		endLineFn:     endLineFn,
 		textFn:        textFn,
-		prompt1:       prompt1,
+		prompt1Fn:     prompt1Fn,
 		prompt2:       prompt2,
 		historyPath:   historyPath,
 		stderr:        stderr,
@@ -64,11 +65,12 @@ func New(prompt1, prompt2, historyPath string, stdout, stderr io.Writer, stdin i
 		// ny is default on Windows
 		rl = "ny"
 	}
+	fp := prompt1Fn()
 	if rl == "ny" {
-		if err := sh.createNyLineReader(prompt1); err != nil {
+		if err := sh.createNyLineReader(fp); err != nil {
 			return nil, err
 		}
-	} else if err := sh.createGohxsLineReader(prompt1); err != nil {
+	} else if err := sh.createGohxsLineReader(fp); err != nil {
 		return nil, err
 	}
 	return sh, nil
@@ -106,9 +108,8 @@ func (sh *Shell) Start(ctx context.Context) error {
 			if errors.Is(err, ErrExit) {
 				return nil
 			}
-			var werr cmderrors.WrappedError
-			if !errors.As(err, &werr) {
-				I2(fmt.Fprintf(sh.stderr, color.RedString("Error: %s\n", err.Error())))
+			if !hzerrors.IsUserCancelled(err) {
+				I2(fmt.Fprintln(sh.stderr, str.Colorize(hzerrors.MakeString(err))))
 			}
 		}
 	}
@@ -117,7 +118,7 @@ func (sh *Shell) Start(ctx context.Context) error {
 func (sh *Shell) readTextReadline(ctx context.Context) (string, error) {
 	// NOTE: when this implementation is changed,
 	// clc/shell/oneshot_shell.go:readTextBasic should also change!
-	prompt := sh.prompt1
+	prompt := sh.prompt1Fn()
 	multiline := false
 	var sb strings.Builder
 	for {

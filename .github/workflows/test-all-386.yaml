@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.3.0-BETA-2"
+      HZ_VERSION: "5.3.0"
       DEFAULT_TIMEOUT: "30s"
     defaults:
       run:
@@ -40,7 +40,7 @@ jobs:
       - name: "Setup Go"
         uses: "actions/setup-go@v3"
         with:
-          go-version: "1.19"
+          go-version: "1.21"
 
       - name: "Install Go tools"
         run: |
@@ -51,6 +51,10 @@ jobs:
         run: |
           go mod tidy
 
+      - name: "Download Test Fixtures"
+        run: |
+          curl https://rcd-download.s3.us-east-2.amazonaws.com/sample-job-1-1.0-SNAPSHOT-all.jar -o base/commands/job/testdata/sample-job-1-1.0-SNAPSHOT-all.jar
+
       - name: "Run All Tests"
         run: |
-          GOARCH=386 make test
+          GOARCH=386 make test TEST_FLAGS="-v -count 1 -timeout 30m"

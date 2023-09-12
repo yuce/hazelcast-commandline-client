@@ -19,6 +19,7 @@ package it
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -29,7 +30,7 @@ import (
 	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
@@ -47,7 +48,7 @@ const (
 
 type TestContext struct {
 	T              *testing.T
-	Cluster        *TestCluster
+	Cluster        TestCluster
 	Client         *hz.Client
 	ClientConfig   *hz.Config
 	ConfigCallback func(testContext TestContext)
@@ -58,6 +59,8 @@ type TestContext struct {
 	LogLevel       string
 	ExpectStdout   *expect.Expect
 	ExpectStderr   *expect.Expect
+	Viridian       *ViridianAPI
+	UseViridian    bool
 	homePath       string
 	stderr         *ProtectedBuffer
 	stdout         *ProtectedBuffer
@@ -111,8 +114,15 @@ func (tcx TestContext) WriteStdinf(format string, args ...any) {
 func (tcx TestContext) Tester(f func(tcx TestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx TestContext) {
+		useViridian := tcx.UseViridian && ViridianEnabled()
 		if tcx.Cluster == nil {
-			tcx.Cluster = defaultTestCluster.Launch(tcx.T)
+			if useViridian {
+				ensureViridianEnvironment()
+				tcx.Cluster = defaultViridianTestCluster.Launch(tcx.T)
+				tcx.Viridian = defaultViridianTestCluster.cls.(*viridianTestCluster).api
+			} else {
+				tcx.Cluster = defaultDedicatedTestCluster.Launch(tcx.T)
+			}
 		}
 		if tcx.ClientConfig == nil {
 			cfg := tcx.Cluster.DefaultConfig()
@@ -133,13 +143,15 @@ func (tcx TestContext) Tester(f func(tcx TestContext)) {
 		}
 		home := check.MustValue(NewCLCHome())
 		defer home.Destroy()
-		if tcx.Client == nil {
+		if tcx.Client == nil && !useViridian {
 			tcx.Client = getDefaultClient(tcx.ClientConfig)
 		}
 		defer func() {
 			ctx := context.Background()
-			if err := tcx.Client.Shutdown(ctx); err != nil {
-				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+			if tcx.Client != nil {
+				if err := tcx.Client.Shutdown(ctx); err != nil {
+					tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
+				}
 			}
 		}()
 		tcx.ConfigPath = "test-cfg"
@@ -227,6 +239,13 @@ func (tcx TestContext) AssertStdoutContains(text string) {
 	}
 }
 
+func (tcx TestContext) AssertStdoutNotContains(text string) {
+	if tcx.ExpectStdout.Match(expect.Contains(text), expect.WithTimeout(DefaultTimeout()), expect.WithDelay(DefaultDelay)) {
+		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
+		tcx.T.Fatalf("expect failed, matched: %s", text)
+	}
+}
+
 func (tcx TestContext) AssertStdoutContainsWithPath(path string) {
 	p := string(check.MustValue(os.ReadFile(path)))
 	tcx.AssertStdoutContains(p)
@@ -237,6 +256,22 @@ func (tcx TestContext) AssertStdoutDollar(text string) {
 		tcx.T.Log("STDOUT:", tcx.ExpectStdout.String())
 		tcx.T.Fatalf("expect failed, no match for: %s", text)
 	}
+}
+
+func (tcx TestContext) AssertJSONStdoutHasRowWithFields(fields ...string) map[string]any {
+	stdout := tcx.ExpectStdout.String()
+	tcx.T.Log("STDOUT:", stdout)
+	var m map[string]any
+	check.Must(json.Unmarshal([]byte(stdout), &m))
+	if len(fields) != len(m) {
+		tcx.T.Fatalf("stdout does not have the same number fields as %v", fields)
+	}
+	for _, k := range fields {
+		if _, ok := m[k]; !ok {
+			tcx.T.Fatalf("stdout does not have the same fields as %v", fields)
+		}
+	}
+	return m
 }
 
 func (tcx TestContext) AssertStdoutDollarWithPath(path string) {
@@ -260,10 +295,14 @@ func (tcx TestContext) WithReset(f func()) {
 }
 
 func (tcx TestContext) CLCExecute(ctx context.Context, args ...string) {
+	check.Must(tcx.CLCExecuteErr(ctx, args...))
+}
+
+func (tcx TestContext) CLCExecuteErr(ctx context.Context, args ...string) error {
 	a := []string{"-c", tcx.ConfigPath}
 	a = append(a, args...)
 	main := check.MustValue(tcx.createMain())
-	check.Must(main.Execute(ctx, a...))
+	return main.Execute(ctx, a...)
 }
 
 func (tcx TestContext) WithShell(ctx context.Context, f func(tcx TestContext)) {
@@ -284,7 +323,7 @@ func (tcx TestContext) createMain() (*cmd.Main, error) {
 	if err != nil {
 		panic(err)
 	}
-	return cmd.NewMain("clc", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
+	return cmd.NewMain("clctest", tcx.ConfigPath, fp, tcx.LogPath, tcx.LogLevel, tcx.IO())
 }
 
 func WithEnv(name, value string, f func()) {
@@ -346,4 +385,13 @@ func (pb *ProtectedBuffer) Bytes() []byte {
 	b := pb.buf.Bytes()
 	pb.mu.RUnlock()
 	return b
+}
+
+func ensureViridianEnvironment() {
+	const s = "ENABLE_VIRIDIAN==1 but %s was not set"
+	for _, e := range []string{envAPIBaseURL, envAPIKey, envAPISecret} {
+		if v := os.Getenv(e); v == "" {
+			panic(fmt.Sprintf(s, e))
+		}
+	}
 }

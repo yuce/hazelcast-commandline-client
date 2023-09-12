@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/cmd"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
@@ -19,16 +20,15 @@ func (cm GetCmd) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("get")
 	help := "Gets cluster information"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(0, 0)
 	return nil
 }
 
 func (cm GetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
-	ci, err := ec.ClientInternal(ctx)
-	if err != nil {
-		return err
-	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
+	row, stop, err := cmd.ExecuteBlocking(ctx, ec, func(ctx context.Context, sp clc.Spinner) (output.Row, error) {
+		ci, err := cmd.ClientInternal(ctx, ec, sp)
+		if err != nil {
+			return nil, err
+		}
 		sp.SetText("Getting cluster information")
 		req := codec.EncodeMCGetClusterMetadataRequest()
 		resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
@@ -40,7 +40,7 @@ func (cm GetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 		if clusterIdExists {
 			cid = clusterID.String()
 		}
-		rows := output.Row{
+		row := output.Row{
 			output.Column{
 				Name:  "State",
 				Type:  serialization.TypeString,
@@ -70,17 +70,13 @@ func (cm GetCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 				Value: cid,
 			},
 		}
-		err = ec.AddOutputRows(ctx, rows)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
+		return row, nil
 	})
 	if err != nil {
 		return fmt.Errorf("retrieving cluster information: %w", err)
 	}
 	stop()
-	return nil
+	return ec.AddOutputRows(ctx, row)
 }
 
 func init() {

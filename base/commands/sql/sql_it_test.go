@@ -1,12 +1,20 @@
+//go:build std || sql
+
 package sql_test
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	_ "github.com/hazelcast/hazelcast-commandline-client/base/commands"
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -61,16 +69,18 @@ func sql_NonInteractiveTest(t *testing.T) {
 }
 
 func sql_NonInteractiveStreamingTest(t *testing.T) {
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-commandline-client/issues/357")
 	tcx := it.TestContext{T: t}
 	tcx.Tester(func(tcx it.TestContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		tcx.WithReset(func() {
 			go func() {
-				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1))")
+				err := tcx.CLCExecuteErr(ctx, "sql", "select * from table(generate_stream(1))", "--timeout", "5s")
+				require.Error(t, err)
 			}()
-			time.Sleep(5 * time.Second)
 			tcx.AssertStdoutContains("1\n2\n")
+			tcx.AssertStderrContains("Timeout\n")
 		})
 	})
 }
@@ -126,28 +136,75 @@ func sql_shellCommandTest(t *testing.T) {
 				tcx.AssertStdoutContains(name)
 			})
 			// dm NAME
+			tnColLen := len("table_name")
 			tcx.WithReset(func() {
 				tcx.WriteStdinf("\\dm %s\n", name)
-				target := fmt.Sprintf(`$----------------------------------------------------------------------------------------------------$
-$ table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options $
+				p1 := name[:tnColLen]
+				p2 := name[tnColLen:]
+				if len(p2) < tnColLen {
+					p2 += strings.Repeat(" ", tnColLen-len(p2))
+				}
+				target := fmt.Sprintf(`$table_catalog | table_schema | table_name | mapping_external_name | mapping_type | mapping_options$ 
 $----------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | "%s"    | IMAP         | {"keyFormat":"i $
-$----------------------------------------------------------------------------------------------------$`, name)
+$ hazelcast     | public       | %s | "%s"    | IMAP         | {"keyFormat":"i $
+$               |              | %s |                       |              | nt","valueForma $
+$               |              |            |                       |              | t":"varchar"}   $
+$----------------------------------------------------------------------------------------------------$`, p1, name, p2)
 				tcx.AssertStdoutDollar(target)
 			})
 			// dm+ NAME
 			tcx.WithReset(func() {
+				p1 := name[:tnColLen]
+				p2 := name[tnColLen:]
+				if len(p2) < tnColLen {
+					p2 += strings.Repeat(" ", tnColLen-len(p2))
+				}
 				tcx.WriteStdinf("\\dm+ %s\n", name)
-				target := `$-----------------------------------------------------------------------------------------------------------------------------$
+				target := fmt.Sprintf(`$-----------------------------------------------------------------------------------------------------------------------------$
 $ table_catalog | table_schema | table_name | column_name | column_external_name | ordinal_position | is_nullable | data_type $
 $-----------------------------------------------------------------------------------------------------------------------------$
-$ hazelcast     | public       | test-table | __key       | __key                |                1 | true        | INTEGER   $
-$ hazelcast     | public       | test-table | this        | this                 |                2 | true        | VARCHAR   $
-$-----------------------------------------------------------------------------------------------------------------------------$`
+$ hazelcast     | public       | %s | __key       | __key                |                1 | true        | INTEGER   $
+$               |              | %s |             |                      |                  |             |           $
+$ hazelcast     | public       | %s | this        | this                 |                2 | true        | VARCHAR   $
+$               |              | %s |             |                      |                  |             |           $
+$-----------------------------------------------------------------------------------------------------------------------------$`, p1, p2, p1, p2)
 				tcx.AssertStdoutDollar(target)
+			})
+			// di
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
+			})
+			// di NAME
+			tcx.WithReset(func() {
+				mm, err := tcx.Client.GetMap(ctx, "default")
+				check.Must(err)
+				check.Must(addIndex(mm))
+				tcx.WriteStdinf("\\di default\n")
+				tcx.AssertStdoutDollarWithPath("testdata/list_indexes.txt")
 			})
 		})
 	})
+}
+
+func addIndex(m *hz.Map) error {
+	err := m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 40}`))
+	if err != nil {
+		return err
+	}
+	indexConfig := types.IndexConfig{
+		Name:               "my-index",
+		Type:               types.IndexTypeSorted,
+		Attributes:         []string{"A"},
+		BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
+	}
+	if err = m.AddIndex(context.Background(), indexConfig); err != nil {
+		return err
+	}
+	return nil
 }
 
 func sqlSuggestion_Interactive(t *testing.T) {
@@ -171,10 +228,10 @@ func sqlSuggestion_NonInteractive(t *testing.T) {
 		ctx := context.Background()
 		it.WithMap(tcx, func(m *hazelcast.Map) {
 			check.Must(m.Set(ctx, "foo", "bar"))
-			// ignoring the error here
-			_ = tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
-			tcx.AssertStderrContains("CREATE MAPPING")
-			tcx.AssertStderrContains("--use-mapping-suggestion")
+			err := tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()))
+			t.Logf("ERROR %s", err.Error())
+			assert.Contains(t, err.Error(), "CREATE MAPPING")
+			assert.Contains(t, err.Error(), "--use-mapping-suggestion")
 			check.Must(tcx.CLC().Execute(ctx, "sql", fmt.Sprintf(`SELECT * FROM "%s";`, m.Name()), "--use-mapping-suggestion"))
 			tcx.AssertStdoutContains("foo\tbar")
 		})
@@ -213,22 +270,6 @@ func sqlOutput_NonInteractiveTest(t *testing.T) {
 		})
 	}
 }
-
-/*
-func sql_NonInteractiveStreamingTest(t *testing.T) {
-	tcx := it.TestContext{T: t}
-	tcx.Tester(func(tcx it.TestContext) {
-		ctx := context.Background()
-		tcx.WithShell(ctx, func(tcx it.TestContext) {
-			tcx.WithReset(func() {
-				tcx.CLCExecute(ctx, "sql", "select * from table(generate_stream(1)) limit 3")
-				tcx.AssertStdoutEquals("0\n1\n2\n")
-			})
-		})
-	})
-}
-
-*/
 
 func sqlOutput_JSONTest(t *testing.T) {
 	formats := []string{"delimited", "json", "csv", "table"}

@@ -4,9 +4,14 @@ package viridian
 
 const (
 	flagName             = "name"
-	flagClusterType      = "cluster-type"
+	flagPrerelease       = "prerelease"
+	flagDevelopment      = "development"
 	flagOutputDir        = "output-dir"
-	flagHazelcastVersion = "hazelcast-version"
+	flagHazelcastVersion = "hz-version"
 	fmtSecretFileName    = "%s-%s.secret"
-	flagImage            = "image"
+	flagImageTag         = "image-tag"
+	argClusterID         = "clusterID"
+	argTitleClusterID    = "cluster name or ID"
+	argArtifactID        = "artifactID"
+	argTitleArtifactID   = "artifact name or ID"
 )

@@ -10,12 +10,12 @@ import (
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type Cmd struct{}
+type Command struct{}
 
-func (cm Cmd) Init(cc plug.InitContext) error {
+func (Command) Init(cc plug.InitContext) error {
 	if !viridian.InternalOpsEnabled() {
+		cc.SetCommandUsage("viridian")
 		cc.SetTopLevel(true)
-		cc.SetCommandUsage("viridian [command]")
 		help := "Various Viridian operations"
 		cc.SetCommandHelp(help, help)
 	}
@@ -24,14 +24,14 @@ func (cm Cmd) Init(cc plug.InitContext) error {
 	return nil
 }
 
-func (cm Cmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (Command) Exec(ctx context.Context, ec plug.ExecContext) error {
 	return nil
 }
 
 func init() {
 	if viridian.InternalOpsEnabled() {
-		plug.Registry.RegisterGlobalInitializer("10-viridian-ops", &Cmd{})
+		plug.Registry.RegisterGlobalInitializer("10-viridian-ops", &Command{})
 	} else {
-		check.Must(plug.Registry.RegisterCommand("viridian", &Cmd{}))
+		check.Must(plug.Registry.RegisterCommand("viridian", &Command{}))
 	}
 }

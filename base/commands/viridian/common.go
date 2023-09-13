@@ -240,11 +240,3 @@ func loadVRDConfig() (vrdConfig, error) {
 	}
 	return vc, nil
 }
-
-func splitImageName(image string) (name, hzVersion string, err error) {
-	ps := strings.SplitN(image, ":", 2)
-	if len(ps) != 2 {
-		return "", "", fmt.Errorf("invalid image name: %s", image)
-	}
-	return ps[0], ps[1], nil
-}

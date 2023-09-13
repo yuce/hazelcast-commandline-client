@@ -28,7 +28,11 @@ Make sure you login before running this command.
 	cc.SetCommandHelp(long, short)
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(flagOutputDir, "o", ".", false, "output directory for the log files; current directory is used by default")
-	cc.AddStringArg(argClusterID, argTitleClusterID)
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandGroup("viridian")
+	} else {
+		cc.AddStringArg(argClusterID, argTitleClusterID)
+	}
 	return nil
 }
 
@@ -37,7 +41,6 @@ func (DownloadLogsCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	if err != nil {
 		return err
 	}
-	clusterNameOrID := ec.GetStringArg(argClusterID)
 	outDir := ec.Props().GetString(flagOutputDir)
 	outDir, err = filepath.Abs(outDir)
 	if err != nil {
@@ -45,6 +48,16 @@ func (DownloadLogsCommand) Exec(ctx context.Context, ec plug.ExecContext) error 
 	}
 	if err := validateOutputDir(outDir); err != nil {
 		return err
+	}
+	var clusterNameOrID string
+	if viridian.InternalOpsEnabled() {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.GetStringArg(argClusterID)
 	}
 	st := stage.Stage[string]{
 		ProgressMsg: "Downloading the cluster logs",
@@ -83,7 +96,9 @@ func validateOutputDir(dir string) error {
 }
 
 func init() {
-	if !viridian.InternalOpsEnabled() {
+	if viridian.InternalOpsEnabled() {
+		check.Must(plug.Registry.RegisterCommand("download-logs", &DownloadLogsCommand{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:download-logs", &DownloadLogsCommand{}))
 	}
 }

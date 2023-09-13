@@ -43,7 +43,11 @@ The log format may be one of:
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddStringFlag(propLogFormat, "", "basic", false,
 		"set the log format, either predefined or free form")
-	cc.AddStringArg(argClusterID, argTitleClusterID)
+	if viridian.InternalOpsEnabled() {
+		cc.SetCommandGroup("viridian")
+	} else {
+		cc.AddStringArg(argClusterID, argTitleClusterID)
+	}
 	return nil
 }
 
@@ -57,7 +61,16 @@ func (StreamLogCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	if err != nil {
 		return fmt.Errorf("invalid log format %s: %w", f, err)
 	}
-	clusterNameOrID := ec.GetStringArg(argClusterID)
+	var clusterNameOrID string
+	if viridian.InternalOpsEnabled() {
+		vc, err := loadVRDConfig()
+		if err != nil {
+			return fmt.Errorf("loading vrd config: %w", err)
+		}
+		clusterNameOrID = vc.ClusterID
+	} else {
+		clusterNameOrID = ec.GetStringArg(argClusterID)
+	}
 	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
 		lf := newLogFixer(ec.Stdout(), t)
 		for {
@@ -197,7 +210,9 @@ func loggerTemplate(format string) string {
 }
 
 func init() {
-	if !viridian.InternalOpsEnabled() {
+	if viridian.InternalOpsEnabled() {
+		check.Must(plug.Registry.RegisterCommand("stream-logs", &StreamLogCommand{}))
+	} else {
 		check.Must(plug.Registry.RegisterCommand("viridian:stream-logs", &StreamLogCommand{}))
 	}
 }

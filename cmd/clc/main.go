@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gohxs/readline"
 	"github.com/spf13/cobra"
 
 	clc "github.com/hazelcast/hazelcast-commandline-client/clc"
@@ -47,7 +48,9 @@ func main() {
 	if err != nil {
 		// print the error only if it wasn't printed before
 		if _, ok := err.(hzerrors.WrappedError); !ok {
-			fmt.Println(cmd.MakeErrStr(err))
+			if !(errors.Is(err, context.Canceled) || errors.Is(err, hzerrors.ErrUserCancelled) || errors.Is(err, readline.ErrInterrupt)) {
+				fmt.Println(cmd.MakeErrStr(err))
+			}
 		}
 	}
 	// ignoring the error here

@@ -7,21 +7,24 @@ import (
 	"fmt"
 
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
+	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	"github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/output"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
+	"github.com/hazelcast/hazelcast-commandline-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
 
-type ClusterDeleteCmd struct{}
+const (
+	propForce = "force"
+)
 
-func (ClusterDeleteCmd) Init(cc plug.InitContext) error {
-	if viridian.InternalOpsEnabled() {
-		cc.SetCommandUsage("delete-cluster")
-	} else {
-		cc.SetCommandUsage("delete-cluster [cluster-ID/name] [flags]")
-	}
+type ClusterDeleteCommand struct{}
+
+func (ClusterDeleteCommand) Init(cc plug.InitContext) error {
+	cc.SetCommandUsage("delete-cluster")
 	long := `Deletes the given Viridian cluster.
 
 Make sure you login before running this command.
@@ -31,16 +34,15 @@ Make sure you login before running this command.
 	cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "skip confirming the delete operation")
 	if viridian.InternalOpsEnabled() {
-		cc.SetCommandGroup("viridian")
-		cc.SetPositionalArgCount(0, 0)
 		cc.AddBoolFlag(propForce, "", false, false, "delete the cluster regardless of its state")
+		cc.SetCommandGroup("viridian")
 	} else {
-		cc.SetPositionalArgCount(1, 1)
+		cc.AddStringArg(argClusterID, argTitleClusterID)
 	}
 	return nil
 }
 
-func (ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
+func (ClusterDeleteCommand) Exec(ctx context.Context, ec plug.ExecContext) error {
 	api, err := getAPI(ec)
 	if err != nil {
 		return err
@@ -57,39 +59,55 @@ func (ClusterDeleteCmd) Exec(ctx context.Context, ec plug.ExecContext) error {
 			return errors.ErrUserCancelled
 		}
 	}
-	var clusterNameOrID string
+	var nameOrID string
 	if viridian.InternalOpsEnabled() {
 		vc, err := loadVRDConfig()
 		if err != nil {
 			return fmt.Errorf("loading vrd config: %w", err)
 		}
-		clusterNameOrID = vc.ClusterID
+		nameOrID = vc.ClusterID
 	} else {
-		clusterNameOrID = ec.Args()[0]
+		nameOrID = ec.GetStringArg(argClusterID)
 	}
-	_, stop, err := ec.ExecuteBlocking(ctx, func(ctx context.Context, sp clc.Spinner) (any, error) {
-		sp.SetText("Deleting the cluster")
-		f := ec.Props().GetBool(propForce)
-		err := api.DeleteCluster(ctx, clusterNameOrID, f)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
+	st := stage.Stage[viridian.Cluster]{
+		ProgressMsg: "Initiating cluster deletion",
+		SuccessMsg:  "Inititated cluster deletion",
+		FailureMsg:  "Failed to inititate cluster deletion",
+		Func: func(ctx context.Context, status stage.Statuser[viridian.Cluster]) (viridian.Cluster, error) {
+			f := ec.Props().GetBool(propForce)
+			cluster, err := api.DeleteCluster(ctx, nameOrID, f)
+			if err != nil {
+				return cluster, err
+			}
+			return cluster, nil
+		},
+	}
+	cluster, err := stage.Execute(ctx, ec, viridian.Cluster{}, stage.NewFixedProvider(st))
 	if err != nil {
 		return handleErrorResponse(ec, err)
 	}
-	stop()
-	ec.PrintlnUnnecessary(fmt.Sprintf("OK Cluster %s was deleted.", clusterNameOrID))
-	return nil
+	ec.PrintlnUnnecessary("")
+	row := []output.Column{
+		{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		},
+	}
+	if ec.Props().GetBool(clc.PropertyVerbose) {
+		row = append(row, output.Column{
+			Name:  "ID",
+			Type:  serialization.TypeString,
+			Value: cluster.ID,
+		})
+	}
+	return ec.AddOutputRows(ctx, row)
 }
-
-func (ClusterDeleteCmd) Unwrappable() {}
 
 func init() {
 	if viridian.InternalOpsEnabled() {
-		check.Must(plug.Registry.RegisterCommand("delete-cluster", &ClusterDeleteCmd{}))
+		check.Must(plug.Registry.RegisterCommand("delete-cluster", &ClusterDeleteCommand{}))
 	} else {
-		check.Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCmd{}))
+		check.Must(plug.Registry.RegisterCommand("viridian:delete-cluster", &ClusterDeleteCommand{}))
 	}
 }

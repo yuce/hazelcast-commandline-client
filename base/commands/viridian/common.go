@@ -15,11 +15,12 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
+	"github.com/hazelcast/hazelcast-commandline-client/clc/config"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/paths"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/secrets"
-
+	"github.com/hazelcast/hazelcast-commandline-client/internal/log"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/viridian"
 )
@@ -33,7 +34,7 @@ const (
 
 var (
 	ErrClusterFailed  = errors.New("cluster failed")
-	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you login?")
+	ErrLoadingSecrets = errors.New("could not load Viridian secrets, did you retrieve the access token using the login command?")
 )
 
 func findTokenPath(apiKey string) (string, error) {
@@ -136,6 +137,19 @@ func waitClusterState(ctx context.Context, ec plug.ExecContext, api *viridian.AP
 	}
 }
 
+func tryImportConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName string) (configPath string, err error) {
+	return importConfig(ctx, ec, api, clusterID, cfgName, "clc", config.CreateFromZip)
+}
+
+func importConfig(ctx context.Context, ec plug.ExecContext, api *viridian.API, clusterID, cfgName, language string, f func(context.Context, string, string, log.Logger) (string, error)) (configPath string, err error) {
+	zipPath, stop, err := api.DownloadConfig(ctx, clusterID, language)
+	if err != nil {
+		return "", err
+	}
+	defer stop()
+	return f(ctx, cfgName, zipPath, ec.Logger())
+}
+
 func matchClusterState(cluster viridian.Cluster, state string) (bool, error) {
 	if cluster.State == state {
 		return true, nil
@@ -167,15 +181,11 @@ func fixClusterState(state string) string {
 	return state
 }
 
-func getFirstAvailableK8sCluster(ctx context.Context, api *viridian.API) (viridian.K8sCluster, error) {
-	clusters, err := api.ListAvailableK8sClusters(ctx)
-	if err != nil {
-		return viridian.K8sCluster{}, err
+func ClusterType(isDev bool) string {
+	if isDev {
+		return "Development"
 	}
-	if len(clusters) == 0 {
-		return viridian.K8sCluster{}, errors.New("cluster creation is not available, try again later")
-	}
-	return clusters[0], nil
+	return "Production"
 }
 
 func makeClusterName() string {

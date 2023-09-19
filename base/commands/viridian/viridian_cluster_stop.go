@@ -30,6 +30,7 @@ Make sure you login before running this command.
 		cc.SetCommandUsage("stop-cluster [cluster-ID/name] [flags]")
 		short = "Stops the given Viridian cluster"
 		cc.AddStringFlag(propAPIKey, "", "", false, "Viridian API Key")
+		cc.AddStringArg(argClusterID, argTitleClusterID)
 	}
 	cc.SetCommandHelp(long, short)
 	return nil

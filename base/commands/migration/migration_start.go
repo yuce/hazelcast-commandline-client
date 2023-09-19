@@ -5,13 +5,14 @@ package migration
 import (
 	"context"
 
+	"github.com/hazelcast/hazelcast-go-client"
+
 	"github.com/hazelcast/hazelcast-commandline-client/clc"
 	"github.com/hazelcast/hazelcast-commandline-client/clc/ux/stage"
 	clcerrors "github.com/hazelcast/hazelcast-commandline-client/errors"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/check"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/plug"
 	"github.com/hazelcast/hazelcast-commandline-client/internal/prompt"
-	"github.com/hazelcast/hazelcast-go-client"
 )
 
 type StartCmd struct{}
@@ -19,13 +20,13 @@ type StartCmd struct{}
 func (StartCmd) Unwrappable() {}
 
 func (StartCmd) Init(cc plug.InitContext) error {
-	cc.SetCommandUsage("start [dmt-config] [flags]")
+	cc.SetCommandUsage("start")
 	cc.SetCommandGroup("migration")
 	help := "Start the data migration"
 	cc.SetCommandHelp(help, help)
-	cc.SetPositionalArgCount(1, 1)
 	cc.AddBoolFlag(clc.FlagAutoYes, "", false, false, "start the migration without confirmation")
 	cc.AddStringFlag(flagOutputDir, "o", "", false, "output directory for the migration report, if not given current directory is used")
+	cc.AddStringArg(argDMTConfig, argTitleDMTConfig)
 	return nil
 }
 
@@ -48,14 +49,14 @@ Selected data structures in the source cluster will be migrated to the target cl
 	}
 	ec.PrintlnUnnecessary("")
 	var updateTopic *hazelcast.Topic
-	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.Args()[0], ec.Props().GetString(flagOutputDir))
+	sts := NewStartStages(ec.Logger(), updateTopic, MakeMigrationID(), ec.GetStringArg(argDMTConfig), ec.Props().GetString(flagOutputDir))
 	if !sts.topicListenerID.Default() && sts.updateTopic != nil {
 		if err := sts.updateTopic.RemoveListener(ctx, sts.topicListenerID); err != nil {
 			return err
 		}
 	}
-	sp := stage.NewFixedProvider(sts.Build(ctx, ec)...)
-	if err := stage.Execute(ctx, ec, sp); err != nil {
+	sp := stage.NewFixedProvider(sts.Build(ec)...)
+	if _, err := stage.Execute(ctx, ec, any(nil), sp); err != nil {
 		return err
 	}
 	ec.PrintlnUnnecessary("")

@@ -16,7 +16,7 @@ import (
 
 type ClusterStopCommand struct{}
 
-func (cm ClusterStopCommand) Init(cc plug.InitContext) error {
+func (ClusterStopCommand) Init(cc plug.InitContext) error {
 	cc.SetCommandUsage("stop-cluster")
 	long := `Stops the cluster.
 
